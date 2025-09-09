@@ -6,9 +6,14 @@
           <v-card-title class="text-center">Welcome</v-card-title>
           <v-card-text>
             <p>This is the home page.</p>
-            <p v-if="keycloakStore.authenticated">You are authenticated.</p>
-            <p v-else>You are not authenticated.</p>
-            <v-btn v-if="keycloakStore.authenticated" @click="logout" color="secondary">Logout</v-btn>
+            <ClientOnly>
+              <p v-if="keycloakStore.authenticated">You are authenticated.</p>
+              <p v-else>You are not authenticated.</p>
+              <v-btn v-if="keycloakStore.authenticated" @click="logout" color="secondary">Logout</v-btn>
+              <NuxtLink v-else to="/login">
+                <v-btn color="primary">Login</v-btn>
+              </NuxtLink>
+            </ClientOnly>
           </v-card-text>
         </v-card>
       </v-col>

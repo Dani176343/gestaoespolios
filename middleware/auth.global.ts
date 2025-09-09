@@ -1,4 +1,5 @@
 import { useKeycloakStore } from "@/stores/keycloak";
+import { useCookie } from '#app';
 
 export default defineNuxtRouteMiddleware(async (to, from) => {
   const keycloakStore = useKeycloakStore();
@@ -19,7 +20,7 @@ export default defineNuxtRouteMiddleware(async (to, from) => {
         new Promise<void>((resolve, reject) => {
           setTimeout(() => {
             reject(new Error('Keycloak readiness timeout'));
-          }, 1000); // 10 seconds timeout
+          }, 1000); // 1 seconds timeout
         })
       ]);
       console.log('Auth middleware (global): Keycloak is ready. Authenticated:', keycloakStore.authenticated);
@@ -33,6 +34,19 @@ export default defineNuxtRouteMiddleware(async (to, from) => {
     }
   } else {
     //console.log('Auth middleware (global): Keycloak was already ready. Authenticated:', keycloakStore.authenticated);
+  }
+
+  if (process.client) {
+    console.log('process.client is true');
+    if (!keycloakStore.authenticated) {
+      console.log('Auth middleware (global): Not authenticated. Checking logged_in cookie...');
+      const loggedInCookie = useCookie<boolean | null>('logged_in');
+      console.log('loggedInCookie: ', loggedInCookie.value);
+      if (loggedInCookie.value === true) {
+        console.log('Auth middleware (global): Authenticated by cookie. Setting authenticated to true.');
+        keycloakStore.login();
+      }
+    }
   }
 
   //console.log('Auth middleware (global): Navigating to:', to.path);
