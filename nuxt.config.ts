@@ -12,6 +12,18 @@ export default defineNuxtConfig({
       },
     },
   },
+  app: {
+        head: {
+            title: 'Gestão de espolios',
+            // Manually adding the CSS link using the <head> property
+            link: [
+                {
+                    rel: 'stylesheet',
+                    href: 'https://digitalidentity.cm-abrantes.pt/style.css',
+                },
+            ],
+        },
+    },
   alias: {
     '~': './',
   },
