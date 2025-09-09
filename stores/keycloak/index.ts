@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia';
 import { useCookie } from '#app';
+import type { UserInfo } from '../../types/keycloak';
 
 export const useKeycloakStore = defineStore('keycloak', {
   state: () => {
@@ -9,7 +10,7 @@ export const useKeycloakStore = defineStore('keycloak', {
       keycloak: null,
       authenticated: loggedInCookie ? loggedInCookie.value === 'true' : false,
       token: null,
-      userInfo: null,
+      userInfo: null as UserInfo | null,
       isKeycloakReady: false,
     };
   },
@@ -22,10 +23,10 @@ export const useKeycloakStore = defineStore('keycloak', {
       this.userInfo = keycloak.userInfo;
 
       if (process.client) {
-        const loggedInCookie = useCookie('logged_in', { path: '/', expires: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) }); // 7 days expiration
-        const accessTokenCookie = useCookie('kc_access_token', { path: '/', expires: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) });
-        const refreshTokenCookie = useCookie('kc_refresh_token', { path: '/', expires: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) });
-        const idTokenCookie = useCookie('kc_id_token', { path: '/', expires: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) });
+        const loggedInCookie = useCookie('logged_in', { path: '/', expires: new Date(Date.now() + 24 * 60 * 60 * 1000) }); // 24 hours expiration
+        const accessTokenCookie = useCookie('kc_access_token', { path: '/', expires: new Date(Date.now() + 24 * 60 * 60 * 1000) });
+        const refreshTokenCookie = useCookie('kc_refresh_token', { path: '/', expires: new Date(Date.now() + 24 * 60 * 60 * 1000) });
+        const idTokenCookie = useCookie('kc_id_token', { path: '/', expires: new Date(Date.now() + 24 * 60 * 60 * 1000) });
 
         console.log('Initial loggedInCookie.value:', loggedInCookie.value);
 
@@ -87,6 +88,49 @@ export const useKeycloakStore = defineStore('keycloak', {
         this.setKeycloak(this.keycloak);
       } catch (error) {
         console.error('Failed to refresh token', error);
+      }
+    },
+
+    async updateUserProfile(updatedProfile: any) {
+      if (!this.keycloak) {
+        console.error('Keycloak instance not available.');
+        return;
+      }
+
+      try {
+        await (this.keycloak as any).updateToken(30);
+
+        // The keycloak-js library does not directly provide a method to update the user profile.
+        // This typically requires making a PUT request to the Keycloak Account API.
+        // The following is a placeholder demonstrating the expected logic.
+        // You will need to implement the actual API call here.
+
+        console.log('Simulating user profile update with data:', updatedProfile);
+
+        // Example of what the API call might look like with fetch:
+        /*
+        const accountUrl = `${(this.keycloak as any).authServerUrl}/realms/${(this.keycloak as any).realm}/account`;
+        const response = await fetch(accountUrl, {
+          method: 'POST', // Keycloak Account API uses POST for updates
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${(this.keycloak as any).token}`
+          },
+          body: JSON.stringify(updatedProfile)
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to update user profile.');
+        }
+        */
+
+        // After a successful update, you might want to reload user info
+        await (this.keycloak as any).loadUserInfo();
+        this.userInfo = (this.keycloak as any).userInfo;
+
+        console.log('User profile updated successfully (simulated).');
+      } catch (error) {
+        console.error('Failed to update user profile:', error);
       }
     },
   },

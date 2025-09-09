@@ -1,21 +1,20 @@
 <template>
   <nav :class="['sidebar', { 'sidebar--collapsed': !isExpanded }]">
     <div class="sidebar__logo" v-if="isExpanded">
-      <h1>Gestão de espolios</h1>
+      <h5>Gestão de espolios</h5>
     </div>
     <ul class="sidebar__nav">
       <li v-for="item in navItems" :key="item.title" class="sidebar__nav-item">
-        <a href="#" class="sidebar__nav-link">
+        <NuxtLink :to="item.to" class="sidebar__nav-link">
           <span class="sidebar__icon">{{ item.icon }}</span>
           <span v-if="isExpanded" class="sidebar__text">{{ item.title }}</span>
-        </a>
+        </NuxtLink>
       </li>
     </ul>
   </nav>
 </template>
 
 <script setup lang="ts">
-import { ref, defineProps } from 'vue';
 
 const props = defineProps({
   isExpanded: {
@@ -25,18 +24,10 @@ const props = defineProps({
 });
 
 const navItems = [
-  { title: 'Dashboard', icon: '🏠' },
-  { title: 'Ecommerce', icon: '🛒' },
-  { title: 'Project', icon: '📁' },
-  { title: 'Marketing', icon: '📢' },
-  { title: 'Analytic', icon: '📊' },
-  { title: 'AI', icon: '🤖' },
-  { title: 'Customer', icon: '👥' },
-  { title: 'Products', icon: '📦' },
-  { title: 'Orders', icon: '🛍️' },
-  { title: 'Account', icon: '👤' },
-  { title: 'Help Center', icon: '❓' },
-  { title: 'Calendar', icon: '📅' }
+  { title: 'Painel central', icon: '🏠', to: '/' },
+  { title: 'Espolios', icon: '📦', to: '#' },
+  { title: 'Perfil', icon: '👤', to: '/profile' },
+  { title: 'Centro de ajuda', icon: '❓', to: '#' },
 ];
 </script>
 

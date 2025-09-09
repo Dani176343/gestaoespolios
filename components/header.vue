@@ -48,7 +48,7 @@
             </li>
             <li>
               <button class="header__dropdown-item">
-                <i class="icon-activity-line"></i>
+                <i class="icon-book-line"></i>
                 Activity Log
               </button>
             </li>
@@ -67,7 +67,7 @@
 </template>
 
 <script lang="ts" setup>
-import { defineProps, ref } from 'vue';
+import { ref } from 'vue';
 
 const props = defineProps({
   isSidebarExpanded: {
