@@ -30,7 +30,6 @@
         <v-spacer></v-spacer>
         <v-btn variant="outlined" color="buttonColor" @click="closeDialog">Fechar</v-btn>
         <v-btn v-if="confirmButton" variant="flat" color="buttonColor" @click="confirmDialog">{{ confirmButtonText }}</v-btn>
-        <v-btn v-if="isSigning" variant="flat" color="buttonColor" @click="signStore.startUp">Assinar</v-btn>
 
       </v-card-actions>
     </v-card>

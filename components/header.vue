@@ -23,40 +23,46 @@
       <button class="header__action-btn" title="Settings" aria-label="Settings">
         <i class="icon-settings-5-line"></i>
       </button>
-      <div class="header__profile" @click="toggleDropdown" tabindex="0" @blur="closeDropdown" @keydown.esc="closeDropdown" role="button" aria-haspopup="true" :aria-expanded="isDropdownOpen.toString()">
-        <img src="https://randomuser.me/api/portraits/women/68.jpg" alt="User Avatar" class="header__avatar" />
+      <div class="header__profile" @click="toggleDropdown" tabindex="0" @blur="closeDropdown" @keydown.esc="closeDropdown" role="button" aria-haspopup="true">
+        <img :src="userAvatar" alt="User Avatar" class="header__avatar" />
         <div v-if="isDropdownOpen" class="header__dropdown" @mousedown.prevent>
           <div class="header__dropdown-header">
-            <img src="https://randomuser.me/api/portraits/women/68.jpg" alt="User Avatar" class="header__dropdown-avatar" />
+            <img :src="userAvatar" alt="User Avatar" class="header__dropdown-avatar" />
             <div class="header__dropdown-userinfo">
-              <strong>Angelina Gotelli</strong>
-              <span>admin-01@ecme.com</span>
+              <strong v-if="keycloakStore.authenticated">{{ keycloakStore.userInfo?.name }}</strong>
+              <strong v-else>Guest</strong>
+              <span v-if="keycloakStore.authenticated">{{ keycloakStore.userInfo?.email }}</span>
+              <span v-else>Please login</span>
             </div>
           </div>
           <ul class="header__dropdown-menu">
-            <li>
+            <li v-if="keycloakStore.authenticated">
               <button class="header__dropdown-item">
                 <i class="icon-user-line"></i>
                 Profile
               </button>
             </li>
-            <li>
+            <li v-if="keycloakStore.authenticated">
               <button class="header__dropdown-item">
                 <i class="icon-settings-5-line"></i>
                 Account Setting
               </button>
             </li>
-            <li>
+            <li v-if="keycloakStore.authenticated">
               <button class="header__dropdown-item">
                 <i class="icon-book-line"></i>
                 Activity Log
               </button>
             </li>
-            <li class="header__dropdown-divider"></li>
+            <li v-if="keycloakStore.authenticated" class="header__dropdown-divider"></li>
             <li>
-              <button class="header__dropdown-item">
+              <button v-if="keycloakStore.authenticated" @click="keycloakStore.logout" class="header__dropdown-item">
                 <i class="icon-logout-box-r-line"></i>
                 Sign Out
+              </button>
+              <button v-else @click="keycloakStore.login" class="header__dropdown-item">
+                <i class="icon-login-box-line"></i>
+                Sign In
               </button>
             </li>
           </ul>
@@ -67,7 +73,8 @@
 </template>
 
 <script lang="ts" setup>
-import { ref } from 'vue';
+import { ref, computed } from 'vue';
+import { useKeycloakStore } from '../stores/keycloak';
 
 const props = defineProps({
   isSidebarExpanded: {
@@ -76,7 +83,12 @@ const props = defineProps({
   }
 });
 
+const keycloakStore = useKeycloakStore();
 const isDropdownOpen = ref(false);
+
+const userAvatar = computed(() => {
+  return keycloakStore.userInfo?.picture || '/images/img_user_profile.png';
+});
 
 function toggleDropdown() {
   isDropdownOpen.value = !isDropdownOpen.value;

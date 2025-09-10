@@ -11,7 +11,7 @@
                 class="d-flex justify-center align-center mb-4 mb-md-0">
               <div style="position: relative; width: 200px; height: 200px;">
                 <v-avatar size="200" color="grey lighten-2">
-                  <v-img :src="profilePhotoUrl || '/images/img_user_profile.png'" />
+                  <v-img :src="previewUrl || profilePhotoUrl || '/images/img_user_profile.png'" />
                 </v-avatar>
 
                 <!-- Hidden file input -->
@@ -67,19 +67,19 @@
               <!-- Coluna Morada -->
               <div class="flex-grow-1" style="min-width: 250px;">
                 <div class="info-title-subtitle mt-2 primary-color-global">Morada</div>
-                <p><span>Rua: </span>{{ keycloakStore.userInfo?.userProfessionalAddress.street }}</p>
-                <p><span>Número: </span>{{ keycloakStore.userInfo?.userProfessionalAddress.number }}</p>
-                <p><span>Lado: </span>{{ keycloakStore.userInfo?.userProfessionalAddress.side }}</p>
-                <p><span>Código Postal: </span>{{ keycloakStore.userInfo?.userProfessionalAddress.postalCode }}</p>
-                <p><span>Localidade: </span>{{ keycloakStore.userInfo?.userProfessionalAddress.locality }}</p>
-                <p><span>Concelhos: </span>{{ keycloakStore.userInfo?.userProfessionalAddress.municipality }}</p>
+                <p><span>Rua: </span>{{ keycloakStore.userInfo?.userProfessionalAddress?.street }}</p>
+                <p><span>Número: </span>{{ keycloakStore.userInfo?.userProfessionalAddress?.number }}</p>
+                <p><span>Lado: </span>{{ keycloakStore.userInfo?.userProfessionalAddress?.side }}</p>
+                <p><span>Código Postal: </span>{{ keycloakStore.userInfo?.userProfessionalAddress?.postalCode }}</p>
+                <p><span>Localidade: </span>{{ keycloakStore.userInfo?.userProfessionalAddress?.locality }}</p>
+                <p><span>Concelhos: </span>{{ keycloakStore.userInfo?.userProfessionalAddress?.municipality }}</p>
               </div>
 
               <!-- Coluna Contactos -->
               <div class="flex-grow-1" style="min-width: 250px;">
                 <div class="info-title-subtitle mt-2 primary-color-global">Contactos</div>
-                <p><span>E-mail: </span>{{ keycloakStore.userInfo?.userProfessionalAddress.email }}</p>
-                <p><span>Telemóvel: </span>{{ keycloakStore.userInfo?.userProfessionalAddress.cellphone }}</p>
+                <p><span>E-mail: </span>{{ keycloakStore.userInfo?.userProfessionalAddress?.email }}</p>
+                <p><span>Telemóvel: </span>{{ keycloakStore.userInfo?.userProfessionalAddress?.cellphone }}</p>
               </div>
             </div>
           </v-col>
@@ -108,19 +108,19 @@
           <!-- Coluna Morada -->
           <div class="flex-grow-1" style="min-width: 250px;">
             <div class="info-title-subtitle mt-2 primary-color-global">Morada</div>
-            <p><span>Rua: </span>{{ keycloakStore.userInfo?.userPersonalAddress.street }}</p>
-            <p><span>Número: </span>{{ keycloakStore.userInfo?.userPersonalAddress.number }}</p>
-            <p><span>Lado: </span>{{ keycloakStore.userInfo?.userPersonalAddress.side }}</p>
-            <p><span>Código Postal: </span>{{ keycloakStore.userInfo?.userPersonalAddress.postalCode }}</p>
-            <p><span>Localidade: </span>{{ keycloakStore.userInfo?.userPersonalAddress.locality }}</p>
-            <p><span>Concelhos: </span>{{ keycloakStore.userInfo?.userPersonalAddress.municipality }}</p>
+            <p><span>Rua: </span>{{ keycloakStore.userInfo?.userPersonalAddress?.street }}</p>
+            <p><span>Número: </span>{{ keycloakStore.userInfo?.userPersonalAddress?.number }}</p>
+            <p><span>Lado: </span>{{ keycloakStore.userInfo?.userPersonalAddress?.side }}</p>
+            <p><span>Código Postal: </span>{{ keycloakStore.userInfo?.userPersonalAddress?.postalCode }}</p>
+            <p><span>Localidade: </span>{{ keycloakStore.userInfo?.userPersonalAddress?.locality }}</p>
+            <p><span>Concelhos: </span>{{ keycloakStore.userInfo?.userPersonalAddress?.municipality }}</p>
           </div>
 
           <!-- Coluna Contactos -->
           <div class="flex-grow-1" style="min-width: 250px;">
             <div class="info-title-subtitle mt-2 primary-color-global">Contactos</div>
-            <p><span>E-mail: </span>{{ keycloakStore.userInfo?.userPersonalAddress.email }}</p>
-            <p><span>Telemóvel: </span>{{ keycloakStore.userInfo?.userPersonalAddress.cellphone }}</p>
+            <p><span>E-mail: </span>{{ keycloakStore.userInfo?.userPersonalAddress?.email }}</p>
+            <p><span>Telemóvel: </span>{{ keycloakStore.userInfo?.userPersonalAddress?.cellphone }}</p>
           </div>
         </div>
       </v-col>
@@ -201,7 +201,7 @@
 import { ref, reactive, onMounted, computed } from 'vue'
 import BaseContainer from '../../components/core/BaseContainer.vue';
 import BaseDialog from '../../components/core/BaseDialog.vue';
-import { useKeycloakStore } from '../../stores/keycloak';
+
 
 const keycloakStore = useKeycloakStore();
 
@@ -233,7 +233,7 @@ const fullName = computed(() => {
 });
 
 const profilePhotoUrl = computed(() => {
-  return null;
+  return keycloakStore.userInfo?.picture;
 });
 
 async function submitForm() {
