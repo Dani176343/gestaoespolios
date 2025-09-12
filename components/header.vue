@@ -7,12 +7,6 @@
         <line x1="3" y1="18" x2="21" y2="18"></line>
       </svg>
     </button>
-    <div class="header__search">
-      <input type="text" placeholder="Search..." aria-label="Search" />
-      <button class="header__search-btn" aria-label="Search button">
-        <i class="icon-search-line"></i>
-      </button>
-    </div>
     <div class="header__actions">
       <button class="header__action-btn" title="Language" aria-label="Select language">
         <span class="header__flag-emoji" role="img" aria-label="US Flag">🇺🇸</span>
