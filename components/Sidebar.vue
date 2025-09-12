@@ -25,7 +25,7 @@ const props = defineProps({
 
 const navItems = [
   { title: 'Painel central', icon: '🏠', to: '/' },
-  { title: 'Espolios', icon: '📦', to: '#' },
+  { title: 'Espolios', icon: '📦', to: '/espolios' },
   { title: 'Perfil', icon: '👤', to: '/profile' },
   { title: 'Centro de ajuda', icon: '❓', to: '#' },
 ];
