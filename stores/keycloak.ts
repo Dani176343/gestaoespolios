@@ -7,7 +7,7 @@ export const useKeycloakStore = defineStore('keycloak', {
     keycloak: null as Keycloak | null,
     authenticated: false,
     userInfo: null as UserInfo | null,
-    token: null as string | null,
+    token: null as string | null | undefined,
   }),
 
   actions: {
@@ -48,7 +48,7 @@ export const useKeycloakStore = defineStore('keycloak', {
     async refreshToken() {
       try {
         const refreshed = await this.keycloak?.updateToken(5);
-        if (refreshed) {
+        if (refreshed && this.keycloak?.token) {
           this.token = this.keycloak?.token;
         }
       } catch (error) {
