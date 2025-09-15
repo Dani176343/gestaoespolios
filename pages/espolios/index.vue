@@ -132,9 +132,10 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
+import { ref, watch } from 'vue';
 import type { VForm } from 'vuetify/lib/components/index.mjs';
 import BaseDialog from '../../components/core/BaseDialog.vue';
+import { useKeycloakStore } from '~/stores/keycloak';
 
 // Type Definitions
 interface Espolio {
@@ -217,6 +218,7 @@ const panel = ref<number[] | number>([0, 1]);
 const form = ref<VForm | null>(null);
 const isFormValid = ref(false);
 const espolioToDelete = ref<Espolio | null>(null);
+const keycloakStore = useKeycloakStore();
 
 // Validation Rules
 const rules = {
@@ -267,7 +269,11 @@ const headers = ref([
   { title: 'Ações', key: 'actions', sortable: false },
 ]);
 
-onMounted(fetchEspolios);
+watch(() => keycloakStore.token, (newToken) => {
+  if (newToken) {
+    fetchEspolios();
+  }
+}, { immediate: true });
 
 // Utility Functions
 function isObject(item: any): item is Record<string, any> {
@@ -297,7 +303,13 @@ function deepMerge<T extends object>(target: T, source: object): T {
 
 async function fetchEspolios() {
   try {
-    const data = await $fetch<Espolio[]>("/api/espolios");
+    console.log('Fetching espolios from collection: /api/espolios');
+    const data = await $fetch<Espolio[]>("/api/espolios", {
+      headers: {
+        'Authorization': `Bearer ${keycloakStore.token}`
+      }
+    });
+    console.log('Successfully fetched espolios. Data:', data);
     espolios.value = data;
   } catch (err) {
     console.error("Erro a buscar espólios:", err);
@@ -403,6 +415,7 @@ async function saveEspolio() {
   if (!form.value) return;
   
   const { valid } = await form.value.validate();
+  console.log('Form validation result:', valid);
   if (!valid) return;
 
   const espolioToSave = sanitizeEspolioForSaving(editedEspolio.value);
@@ -416,6 +429,9 @@ async function saveEspolio() {
         const updatedEspolio = await $fetch<Espolio>(`/api/espolios/${encodeURIComponent(espolioToSave._id)}`, {
           method: 'PUT',
           body: espolioToSave,
+          headers: {
+            'Authorization': `Bearer ${keycloakStore.token}`
+          }
         });
         if (updatedEspolio) {
           espolios.value[editedIndex.value] = updatedEspolio;
@@ -426,16 +442,23 @@ async function saveEspolio() {
     }
   } else {
     // Create
+    console.log('Attempting to create new espolio. Keycloak Token:', keycloakStore.token);
     try {
       const newEspolio = await $fetch<Espolio>('/api/espolios', {
         method: 'POST',
         body: espolioToSave,
+        headers: {
+          'Authorization': `Bearer ${keycloakStore.token}`
+        }
       });
       if (newEspolio) {
         espolios.value.push(newEspolio);
+        console.log('New espolio added successfully:', newEspolio);
       }
     } catch (error) {
       console.error("Erro ao criar espólio:", error);
+      // Log the full error object for more details
+      console.error("Detalhes do erro ao criar espólio:", JSON.stringify(error, null, 2));
     }
   }
   editDialog.value = false;
@@ -457,6 +480,9 @@ async function deleteEspolioConfirm() {
   try {
     await $fetch<void>(`/api/espolios/${encodeURIComponent(espolioToDelete.value._id)}`, {
       method: 'DELETE',
+      headers: {
+        'Authorization': `Bearer ${keycloakStore.token}`
+      }
     });
     espolios.value = espolios.value.filter(e => e._id !== espolioToDelete.value?._id);
   } catch (error) {

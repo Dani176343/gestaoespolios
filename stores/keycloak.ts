@@ -1,13 +1,16 @@
+// stores/keycloak.ts
 import { defineStore } from 'pinia';
 import Keycloak from 'keycloak-js';
-import type { UserInfo } from '../types/keycloak';
+import { jwtDecode } from 'jwt-decode';
+import type { UserInfo, CustomJwtPayload } from '../types/keycloak';
 
 export const useKeycloakStore = defineStore('keycloak', {
   state: () => ({
-    keycloak: null as Keycloak | null,
+    keycloak: null as Keycloak.KeycloakInstance | null,
     authenticated: false,
     userInfo: null as UserInfo | null,
-    token: null as string | null | undefined,
+    token: null as string | null,
+    userOrganization: null as string | null,
   }),
 
   actions: {
@@ -30,7 +33,22 @@ export const useKeycloakStore = defineStore('keycloak', {
 
         if (authenticated) {
           this.userInfo = await keycloak.loadUserInfo() as UserInfo;
-          this.token = keycloak.token;
+          this.token = keycloak.token ?? null;
+
+          if (this.token) {
+            try { 
+              const decodedToken = jwtDecode<CustomJwtPayload>(this.token);
+              const orgsData = decodedToken.orgs;
+              if (orgsData) {
+                const orgKey = Object.keys(orgsData)[0];
+                if (orgKey) {
+                  this.userOrganization = orgKey;
+                }
+              }
+            } catch (error) {
+              console.error('Failed to decode JWT token:', error);
+            }
+          }
         }
       } catch (error) {
         console.error('Failed to initialize Keycloak:', error);
@@ -49,7 +67,7 @@ export const useKeycloakStore = defineStore('keycloak', {
       try {
         const refreshed = await this.keycloak?.updateToken(5);
         if (refreshed && this.keycloak?.token) {
-          this.token = this.keycloak?.token;
+          this.token = this.keycloak.token;
         }
       } catch (error) {
         console.error('Failed to refresh token:', error);

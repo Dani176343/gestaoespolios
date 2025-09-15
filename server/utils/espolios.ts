@@ -1,38 +1,56 @@
 import type { Espolio } from '~/types/espolio';
-import { AcervoModel, connectToMongo } from '~/server/utils/db';
+import { getAcervoModel, connectToMongo } from '~/server/utils/db';
 
-export const getEspolios = async (): Promise<Espolio[]> => {
+export const getEspolios = async (organization: string): Promise<Espolio[]> => {
   await connectToMongo();
-  // Using .lean() to get plain JS objects, which is faster.
-  // Nitro will automatically convert ObjectId to string during JSON serialization.
+  const AcervoModel = await getAcervoModel(organization);
+  if (!AcervoModel) {
+    return [];
+  }
   const espolios = await AcervoModel.find({}).lean();
-  // Although Nitro handles serialization, we cast to `any` to satisfy TypeScript
-  // since Mongoose's .lean() returns _id as an ObjectId, not a string.
+  console.log(`Found ${espolios.length} espolios in collection '${organization}'.`);
   return espolios as any;
 };
 
-export const addEspolio = async (espolio: Omit<Espolio, '_id'>): Promise<Espolio> => {
+export const addEspolio = async (organization: string, espolio: Omit<Espolio, '_id'>): Promise<Espolio | null> => {
   await connectToMongo();
-  const newEspolio = new AcervoModel(espolio);
-  const saved = await newEspolio.save();
-  // `toObject()` returns a plain object. We cast to `any` for the same `_id` type reason.
-  return saved.toObject() as any;
+  const AcervoModel = await getAcervoModel(organization);
+  if (!AcervoModel) {
+    console.error(`AcervoModel not found for organization: ${organization}`);
+    return null;
+  }
+  try {
+    const newEspolio = new AcervoModel(espolio);
+    const saved = await newEspolio.save();
+    console.log(`Successfully added new espolio to collection: ${organization}`);
+    return saved.toObject() as any;
+  } catch (error) {
+    console.error(`Error adding espolio to collection ${organization}:`, error);
+    return null;
+  }
 };
 
-export const updateEspolio = async (id: string, updatedEspolio: Partial<Espolio>): Promise<Espolio | null> => {
+export const updateEspolio = async (organization: string, id: string, updatedEspolio: Partial<Espolio>): Promise<Espolio | null> => {
   await connectToMongo();
-  // The frontend sends the whole object, including `_id`. We should remove it from the update payload.
+  const AcervoModel = await getAcervoModel(organization);
+  if (!AcervoModel) {
+    return null;
+  }
   const updateData = { ...updatedEspolio };
   delete updateData._id;
   const espolio = await AcervoModel.findByIdAndUpdate(id, updateData, { new: true }).lean();
   return espolio as any;
 };
 
-export const deleteEspolioById = async (id: string | undefined): Promise<{ success: boolean } | null> => {
+export const deleteEspolioById = async (organization: string, id: string | undefined): Promise<{ success: boolean } | null> => {
   if (!id) {
     return null;
   }
   await connectToMongo();
+  const AcervoModel = await getAcervoModel(organization);
+  if (!AcervoModel) {
+    return null;
+  }
   const result = await AcervoModel.findByIdAndDelete(id);
   if (result) {
     return { success: true };

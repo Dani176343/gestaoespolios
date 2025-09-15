@@ -5,6 +5,7 @@ export default defineNuxtConfig({
   devtools: { enabled: true },
   runtimeConfig: {
     public: {
+      apiBaseUrl: process.env.API_BASE_URL || 'http://localhost:3001/api', 
       keycloak: {
         url: process.env.KEYCLOAK_URL || 'http://localhost:8080/auth',
         realm: process.env.KEYCLOAK_REALM || 'my-realm',
