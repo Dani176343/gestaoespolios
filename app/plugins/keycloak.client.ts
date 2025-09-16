@@ -5,5 +5,8 @@ export default defineNuxtPlugin(async (nuxtApp) => {
 
   if (process.client) {
     await keycloakStore.init();
+    if (!keycloakStore.authenticated) {
+      keycloakStore.login();
+    }
   }
 });

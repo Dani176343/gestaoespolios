@@ -10,25 +10,25 @@
                 <v-avatar size="200" color="grey lighten-2">
                   <v-img :src="previewUrl || profilePhotoUrl || '/images/img_user_profile.png'" />
                 </v-avatar>
-
-                <!-- Hidden file input -->
+                <!-- 
+                <!- Hidden file input ->
                 <input ref="fileInputRef" type="file" accept="image/*" class="d-none" @change="onFileChange" />
 
-                <!-- Ícone da câmera -->
+                <!- Ícone da câmera ->
                 <div @click="triggerFileInput" class="icon-photo-div">
                   <v-icon icon="mdi-camera" size="24" color="white" />
-                </div>
+                </div> -->
               </div>
             </v-col>
 
             <!-- Informações do usuário -->
             <v-col cols="12" md class="d-flex flex-column justify-center text-start">
               <div class="text-subtitle-1 info-user-name">
-                {{ keycloakStore.userInfo?.fullName }}
+                {{ fullName }}
               </div>
               <div class="text-subtitle-1 info-user-info">
                 <span>Organização:</span>
-                {{ Object.keys(keycloakStore.keycloak?.tokenParsed?.orgs || {})[0] }}
+                {{ keycloakStore.userOrganization }}
               </div>
             </v-col>
           </v-row>
@@ -36,38 +36,6 @@
       </BaseContainer>
     </v-col>
   </v-row>
-
-  <BaseContainer title="">
-    <v-card class="d-flex align-center" flat elevation="0">
-      <v-col class="ml-4 text-start">
-        <!-- Container flex para título e botão -->
-        <div class="d-flex align-center justify-space-between">
-          <span class="info-title">Dados Pessoais</span>
-        </div>
-
-        <v-divider class="mt-3 mb-3" />
-
-        <div class="text-subtitle-1 font-weight-medium d-flex flex-wrap" style="gap: 2rem;">
-          <!-- Coluna Morada -->
-          <div class="flex-grow-1" style="min-width: 250px;">
-            <div class="info-title-subtitle mt-2 primary-color-global">Morada</div>
-            <p><span>Rua: </span>{{ keycloakStore.userInfo?.userPersonalAddress?.street }}</p>
-            <p><span>Número: </span>{{ keycloakStore.userInfo?.userPersonalAddress?.number }}</p>
-            <p><span>Lado: </span>{{ keycloakStore.userInfo?.userPersonalAddress?.side }}</p>
-            <p><span>Código Postal: </span>{{ keycloakStore.userInfo?.userPersonalAddress?.postalCode }}</p>
-            <p><span>Localidade: </span>{{ keycloakStore.userInfo?.userPersonalAddress?.locality }}</p>
-            <p><span>Concelho: </span>{{ keycloakStore.userInfo?.userPersonalAddress?.municipality }}</p>
-          </div>
-
-          <!-- Coluna Contactos -->
-          <div class="flex-grow-1" style="min-width: 250px;">
-            <div class="info-title-subtitle mt-2 primary-color-global">Contactos</div>
-            <p><span>Telemóvel: </span>{{ keycloakStore.userInfo?.userPersonalAddress?.cellphone }}</p>
-          </div>
-        </div>
-      </v-col>
-    </v-card>
-  </BaseContainer>
 </template>
 
 <script setup lang="ts">
@@ -82,8 +50,8 @@ const previewUrl = ref<string | null>(null);
 const selectedFile = ref<File | null>(null);
 
 const fullName = computed(() => {
-  if (keycloakStore.userInfo?.given_name && keycloakStore.userInfo?.family_name) {
-    return `${keycloakStore.userInfo.given_name} ${keycloakStore.userInfo.family_name}`;
+  if (keycloakStore.userInfo?.name) {
+    return `${keycloakStore.userInfo.name}`;
   }
   return keycloakStore.userInfo?.preferred_username || '';
 });
