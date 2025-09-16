@@ -1,5 +1,5 @@
-import { deleteEspolioById } from "~/server/utils/espolios";
-import { getOrganizationFromEvent } from "~/server/utils/auth";
+import { updateEspolio } from "../../../server/utils/espolios";
+import { getOrganizationFromEvent } from "../../../server/utils/auth";
 
 export default defineEventHandler(async (event) => {
   const organization = getOrganizationFromEvent(event);
@@ -7,5 +7,6 @@ export default defineEventHandler(async (event) => {
   if (!id) {
     throw createError({ statusCode: 400, statusMessage: 'ID is required' });
   }
-  return deleteEspolioById(organization, id);
+  const body = await readBody(event);
+  return updateEspolio(organization, id, body);
 });

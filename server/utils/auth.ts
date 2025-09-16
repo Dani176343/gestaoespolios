@@ -1,6 +1,6 @@
 import { getRequestHeader, H3Event, createError } from 'h3';
 import { jwtDecode } from 'jwt-decode';
-import type { CustomJwtPayload } from '~/types/keycloak';
+import type { CustomJwtPayload } from '../../types/keycloak';
 
 export function getOrganizationFromEvent(event: H3Event): string {
   const authHeader = getRequestHeader(event, 'authorization');
