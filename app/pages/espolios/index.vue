@@ -32,7 +32,7 @@
       confirm-button-text="Salvar"
     >
       <v-form ref="form" v-model="isFormValid">
-        <v-expansion-panels v-model="panel" multiple>
+        <v-expansion-panels v-model="panel">
           <!-- Form sections go here -->
           <v-expansion-panel title="Caraterização da organização">
             <v-expansion-panel-text>
@@ -146,7 +146,7 @@ const editDialog = ref(false);
 const deleteDialog = ref(false);
 const dialogTitle = ref('');
 const editedIndex = ref(-1);
-const panel = ref<number[] | number>([0, 1]);
+const panel = ref<number | null>(0);
 const form = ref<VForm | null>(null);
 const isFormValid = ref(false);
 const espolioToDelete = ref<Espolio | null>(null);
