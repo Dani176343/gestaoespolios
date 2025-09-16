@@ -60,29 +60,23 @@ const profilePhotoUrl = computed(() => {
   return keycloakStore.userInfo?.picture;
 });
 
-function triggerFileInput() {
-  fileInputRef.value?.click();
-}
+// function triggerFileInput() {
+//   fileInputRef.value?.click();
+// }
 
-function onFileChange(event: Event) {
-  const target = event.target as HTMLInputElement;
-  const file = target.files?.[0];
+// function onFileChange(event: Event) {
+//   const target = event.target as HTMLInputElement;
+//   const file = target.files?.[0];
 
-  if (!file) return;
+//   if (!file) return;
 
-  selectedFile.value = file;
-  previewUrl.value = URL.createObjectURL(file);
-}
+//   selectedFile.value = file;
+//   previewUrl.value = URL.createObjectURL(file);
+// }
 
 onMounted(() => {
   console.log("Access Token:", keycloakStore.keycloak?.token);
-  const base64Url = keycloakStore.keycloak?.token?.split('.')[1];
-  if (base64Url) {
-    const payload = JSON.parse(atob(base64Url));
-    console.log("Decoded Token Payload:", payload);
-    console.log("Orgs1:", payload.orgs);
-  }
-  console.log("Orgs2:", keycloakStore.keycloak?.tokenParsed?.orgs);
+  console.log("Orgs:", keycloakStore.keycloak?.tokenParsed?.orgs);
   console.log("keycloakStore.userInfo onMounted:", keycloakStore.userInfo);
   console.log("keycloakStore.keycloak?.tokenParsed onMounted:", keycloakStore.keycloak?.tokenParsed);
 });
