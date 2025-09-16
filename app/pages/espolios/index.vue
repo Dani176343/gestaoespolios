@@ -133,9 +133,12 @@
 
 <script setup lang="ts">
 import { ref, watch } from 'vue';
+import { useRuntimeConfig } from '#app';
 import type { VForm } from 'vuetify/lib/components/index.mjs';
 import BaseDialog from '~/components/core/BaseDialog.vue';
 import { useKeycloakStore } from '~/stores/keycloak';
+
+const config = useRuntimeConfig();
 
 // Type Definitions
 interface Espolio {
@@ -303,8 +306,8 @@ function deepMerge<T extends object>(target: T, source: object): T {
 
 async function fetchEspolios() {
   try {
-    console.log('Fetching espolios from collection: /api/espolios');
-    const data = await $fetch<Espolio[]>("/api/espolios", {
+    console.log('Fetching espolios from collection:', `${config.public.apiBaseUrl}/espolios`);
+    const data = await $fetch<Espolio[]>(`${config.public.apiBaseUrl}/espolios`, {
       headers: {
         'Authorization': `Bearer ${keycloakStore.token}`
       }
@@ -426,7 +429,7 @@ async function saveEspolio() {
       if (!espolioToSave._id) {
         console.error('Espólio sem _id não pode ser atualizado');
       } else {
-        const updatedEspolio = await $fetch<Espolio>(`/api/espolios/${encodeURIComponent(espolioToSave._id)}`, {
+        const updatedEspolio = await $fetch<Espolio>(`${config.public.apiBaseUrl}/espolios/${encodeURIComponent(espolioToSave._id)}`, {
           method: 'PUT',
           body: espolioToSave,
           headers: {
@@ -444,7 +447,7 @@ async function saveEspolio() {
     // Create
     console.log('Attempting to create new espolio. Keycloak Token:', keycloakStore.token);
     try {
-      const newEspolio = await $fetch<Espolio>('/api/espolios', {
+      const newEspolio = await $fetch<Espolio>(`${config.public.apiBaseUrl}/espolios`, {
         method: 'POST',
         body: espolioToSave,
         headers: {
@@ -478,7 +481,7 @@ async function deleteEspolioConfirm() {
   if (!espolioToDelete.value || !espolioToDelete.value._id) return;
 
   try {
-    await $fetch<void>(`/api/espolios/${encodeURIComponent(espolioToDelete.value._id)}`, {
+    await $fetch<void>(`${config.public.apiBaseUrl}/espolios/${encodeURIComponent(espolioToDelete.value._id)}`, {
       method: 'DELETE',
       headers: {
         'Authorization': `Bearer ${keycloakStore.token}`
