@@ -30,6 +30,10 @@
                 <span>Organização:</span>
                 {{ keycloakStore.userOrganization }}
               </div>
+              <div v-if="keycloakStore.userInfo?.email" class="text-subtitle-1 info-user-info">
+                <span>Email:</span>
+                {{ keycloakStore.userInfo.email }}
+              </div>
             </v-col>
           </v-row>
         </v-card>
