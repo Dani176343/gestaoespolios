@@ -25,7 +25,6 @@ export default defineNuxtConfig({
             ],
         },
     },
-  srcDir: './',
   devServer: {
     port: 5173  // ou qualquer porta livre
   }

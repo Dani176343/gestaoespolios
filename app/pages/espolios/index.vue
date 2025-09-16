@@ -134,7 +134,7 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue';
 import type { VForm } from 'vuetify/lib/components/index.mjs';
-import BaseDialog from '../../components/core/BaseDialog.vue';
+import BaseDialog from '~/components/core/BaseDialog.vue';
 import { useKeycloakStore } from '~/stores/keycloak';
 
 // Type Definitions

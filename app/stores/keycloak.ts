@@ -2,7 +2,7 @@
 import { defineStore } from 'pinia';
 import Keycloak from 'keycloak-js';
 import { jwtDecode } from 'jwt-decode';
-import type { UserInfo, CustomJwtPayload } from '../types/keycloak';
+import type { UserInfo, CustomJwtPayload } from '../../types/keycloak';
 
 export const useKeycloakStore = defineStore('keycloak', {
   state: () => ({

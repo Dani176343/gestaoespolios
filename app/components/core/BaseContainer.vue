@@ -50,7 +50,7 @@
 </template>
 
 <script setup>
-import LoadingSpinner from "../components/core/LoadingSpinner.vue";
+import LoadingSpinner from "~/components/core/LoadingSpinner.vue";
 
 
 const props = defineProps({

@@ -20,7 +20,7 @@
 </template>
 
 <script setup>
-import { useKeycloakStore } from '../stores/keycloak';
+import { useKeycloakStore } from '~/stores/keycloak';
 
 const keycloakStore = useKeycloakStore();
 

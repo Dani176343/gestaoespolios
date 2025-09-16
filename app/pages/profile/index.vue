@@ -71,8 +71,9 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
-import BaseContainer from '../../components/core/BaseContainer.vue';
+import { ref, computed, onMounted } from 'vue'
+import BaseContainer from '~/components/core/BaseContainer.vue';
+import { useKeycloakStore } from '../../stores/keycloak';
 
 const keycloakStore = useKeycloakStore();
 
@@ -114,6 +115,8 @@ onMounted(() => {
     console.log("Orgs1:", payload.orgs);
   }
   console.log("Orgs2:", keycloakStore.keycloak?.tokenParsed?.orgs);
+  console.log("keycloakStore.userInfo onMounted:", keycloakStore.userInfo);
+  console.log("keycloakStore.keycloak?.tokenParsed onMounted:", keycloakStore.keycloak?.tokenParsed);
 });
 
 </script>
