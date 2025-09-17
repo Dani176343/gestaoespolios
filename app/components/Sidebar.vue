@@ -6,7 +6,7 @@
     <ul class="sidebar__nav">
       <li v-for="item in navItems" :key="item.title" class="sidebar__nav-item">
         <NuxtLink :to="item.to" class="sidebar__nav-link">
-          <span class="sidebar__icon">{{ item.icon }}</span>
+          <i :class="['sidebar__icon', item.icon]"></i>
           <span v-if="isExpanded" class="sidebar__text">{{ item.title }}</span>
         </NuxtLink>
       </li>
@@ -24,10 +24,10 @@ const props = defineProps({
 });
 
 const navItems = [
-  { title: 'Painel central', icon: '🏠', to: '/' },
-  { title: 'Espolios', icon: '📦', to: '/espolios' },
-  { title: 'Perfil', icon: '👤', to: '/profile' },
-  { title: 'Centro de ajuda', icon: '❓', to: '#' },
+  { title: 'Painel central', icon: 'icon-home-line', to: '/' },
+  { title: 'Espolios', icon: 'icon-archive-line', to: '/espolios' },
+  { title: 'Perfil', icon: 'icon-user-line', to: '/profile' },
+  { title: 'Centro de ajuda', icon: 'icon-question-line', to: '#' },
 ];
 </script>
 

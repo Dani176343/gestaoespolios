@@ -1,4 +1,4 @@
-import type { Espolio } from '../../types/espolio';
+import type { Espolio } from '~~/types/espolio';
 
 const API_URL = 'http://localhost:3000/espolios';
 

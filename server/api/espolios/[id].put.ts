@@ -1,5 +1,5 @@
-import { updateEspolio } from "../../../server/utils/espolios";
-import { getOrganizationFromEvent } from "../../../server/utils/auth";
+import { updateEspolio } from "../utils/espolios";
+import { getOrganizationFromEvent } from "../utils/auth";
 
 export default defineEventHandler(async (event) => {
   const organization = getOrganizationFromEvent(event);
