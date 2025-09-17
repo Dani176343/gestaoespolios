@@ -345,55 +345,60 @@ function sanitizeEspolioForSaving(espolio: Espolio): Espolio {
 
 async function saveEspolio() {
   if (!form.value) return;
-  
+
   const { valid } = await form.value.validate();
-  console.log('Form validation result:', valid);
   if (!valid) return;
 
   const espolioToSave = sanitizeEspolioForSaving(editedEspolio.value);
+
+  const formData = new FormData();
+  formData.append('espolio', JSON.stringify(espolioToSave));
+
+  // The v-file-input can return an array or a single file.
+  const file = Array.isArray(imagemFile.value) ? imagemFile.value[0] : imagemFile.value;
+  if (file) {
+    formData.append('imagem', file);
+  }
+
+  const headers = {
+    'Authorization': `Bearer ${keycloakStore.token}`
+  };
 
   if (editedIndex.value > -1) {
     // Update
     try {
       if (!espolioToSave._id) {
         console.error('Espólio sem _id não pode ser atualizado');
-      } else {
-        const updatedEspolio = await $fetch<Espolio>(`${config.public.apiBaseUrl}/espolios/${encodeURIComponent(espolioToSave._id)}`, {
-          method: 'PUT',
-          body: espolioToSave,
-          headers: {
-            'Authorization': `Bearer ${keycloakStore.token}`
-          }
-        });
-        if (updatedEspolio) {
-          espolios.value[editedIndex.value] = updatedEspolio;
-        }
+        return;
+      }
+      const updatedEspolio = await $fetch<Espolio>(`${config.public.apiBaseUrl}/espolios/${encodeURIComponent(espolioToSave._id)}`, {
+        method: 'PUT',
+        body: formData,
+        headers,
+      });
+      if (updatedEspolio) {
+        espolios.value[editedIndex.value] = updatedEspolio;
       }
     } catch (error) {
       console.error("Erro ao atualizar espólio:", error);
     }
   } else {
     // Create
-    console.log('Attempting to create new espolio. Keycloak Token:', keycloakStore.token);
     try {
       const newEspolio = await $fetch<Espolio>(`${config.public.apiBaseUrl}/espolios`, {
         method: 'POST',
-        body: espolioToSave,
-        headers: {
-          'Authorization': `Bearer ${keycloakStore.token}`
-        }
+        body: formData,
+        headers,
       });
       if (newEspolio) {
         espolios.value.push(newEspolio);
-        console.log('New espolio added successfully:', newEspolio);
       }
     } catch (error) {
       console.error("Erro ao criar espólio:", error);
-      // Log the full error object for more details
-      console.error("Detalhes do erro ao criar espólio:", JSON.stringify(error, null, 2));
     }
   }
   editDialog.value = false;
+  imagemFile.value = null; // Reset file input
 }
 
 function openDeleteDialog(item: Espolio) {

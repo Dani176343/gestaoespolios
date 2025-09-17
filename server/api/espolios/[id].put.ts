@@ -7,6 +7,5 @@ export default defineEventHandler(async (event) => {
   if (!id) {
     throw createError({ statusCode: 400, statusMessage: 'ID is required' });
   }
-  const body = await readBody(event);
-  return updateEspolio(organization, id, body);
+  return updateEspolio(organization, id, event);
 });
