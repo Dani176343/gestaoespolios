@@ -108,7 +108,8 @@
 
           <v-expansion-panel title="Anexo">
             <v-expansion-panel-text>
-                <v-file-input label="Imagem" v-model="imagemFile" chips></v-file-input>
+                <v-img v-if="imagePreviewUrl" :src="imagePreviewUrl" max-height="300" class="mb-4"></v-img>
+                <v-file-input label="Imagem" v-model="imagemFile" chips accept="image/*"></v-file-input>
                 <v-text-field v-model="editedEspolio.catalogacao.anexo.imagem" label="URL da Imagem" hint="URL da imagem existente ou para onde será enviada."></v-text-field>
             </v-expansion-panel-text>
           </v-expansion-panel>
@@ -132,7 +133,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch } from 'vue';
+import { ref, watch, computed } from 'vue';
 import { useRuntimeConfig } from '#app';
 import type { VForm } from 'vuetify/lib/components/index.mjs';
 import BaseDialog from '~/components/core/BaseDialog.vue';
@@ -193,6 +194,7 @@ const defaultEspolio: Espolio = {
 
 const editedEspolio = ref<Espolio>(JSON.parse(JSON.stringify(defaultEspolio)));
 const imagemFile = ref<File | File[] | null>(null);
+const imagePreviewDataUrl = ref<string | null>(null);
 
 const headers = ref([
   { title: 'Designação', key: 'organizacao.designacao' },
@@ -206,6 +208,29 @@ watch(() => keycloakStore.token, (newToken) => {
     fetchEspolios();
   }
 }, { immediate: true });
+
+watch(imagemFile, (newFile) => {
+  const file = Array.isArray(newFile) ? newFile[0] : newFile;
+  if (file && file instanceof File) {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      imagePreviewDataUrl.value = e.target?.result as string;
+    };
+    reader.readAsDataURL(file);
+  } else {
+    imagePreviewDataUrl.value = null;
+  }
+});
+
+const imagePreviewUrl = computed(() => {
+  if (imagePreviewDataUrl.value) {
+    return imagePreviewDataUrl.value;
+  }
+  if (editedEspolio.value.catalogacao.anexo.imagem) {
+    return editedEspolio.value.catalogacao.anexo.imagem;
+  }
+  return null;
+});
 
 // Utility Functions
 function isObject(item: any): item is Record<string, any> {
@@ -251,6 +276,8 @@ async function fetchEspolios() {
 function openAddDialog() {
   editedIndex.value = -1;
   editedEspolio.value = JSON.parse(JSON.stringify(defaultEspolio));
+  imagemFile.value = null;
+  imagePreviewDataUrl.value = null;
   dialogTitle.value = 'Adicionar Novo Espólio';
   editDialog.value = true;
 }
@@ -259,6 +286,8 @@ function openEditDialog(item: any) {
   editedIndex.value = espolios.value.findIndex(e => e._id === item._id);
   const defaultClone = JSON.parse(JSON.stringify(defaultEspolio));
   editedEspolio.value = deepMerge(defaultClone, item);
+  imagemFile.value = null;
+  imagePreviewDataUrl.value = null;
   dialogTitle.value = 'Editar Espólio';
   editDialog.value = true;
 }
@@ -360,9 +389,8 @@ async function saveEspolio() {
     formData.append('imagem', file);
   }
 
-  const headers = {
-    'Authorization': `Bearer ${keycloakStore.token}`
-  };
+  const fetchHeaders = new Headers();
+  fetchHeaders.append('Authorization', `Bearer ${keycloakStore.token}`);
 
   if (editedIndex.value > -1) {
     // Update
@@ -374,7 +402,7 @@ async function saveEspolio() {
       const updatedEspolio = await $fetch<Espolio>(`${config.public.apiBaseUrl}/espolios/${encodeURIComponent(espolioToSave._id)}`, {
         method: 'PUT',
         body: formData,
-        headers,
+        headers: fetchHeaders,
       });
       if (updatedEspolio) {
         espolios.value[editedIndex.value] = updatedEspolio;
@@ -388,7 +416,7 @@ async function saveEspolio() {
       const newEspolio = await $fetch<Espolio>(`${config.public.apiBaseUrl}/espolios`, {
         method: 'POST',
         body: formData,
-        headers,
+        headers: fetchHeaders,
       });
       if (newEspolio) {
         espolios.value.push(newEspolio);
