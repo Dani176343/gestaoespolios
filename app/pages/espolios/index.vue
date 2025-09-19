@@ -8,12 +8,10 @@
         <v-btn color="primary" @click="openAddDialog">Adicionar Espólio</v-btn>
       </v-card-title>
       <v-card-text>
-        <v-data-table
-          :headers="headers"
-          :items="espolios"
-          item-value="_id"
-          class="elevation-1"
-        >
+        <v-text-field v-model="search" append-icon="mdi-magnify" label="Search" single-line hide-details
+          variant="outlined"></v-text-field>
+        <br />
+        <v-data-table :headers="headers" :items="filteredEspolios" item-value="_id" class="elevation-1">
           <template v-slot:item.actions="{ item }">
             <v-icon size="small" class="mr-2" @click="openEditDialog(item)">mdi-pencil</v-icon>
             <v-icon size="small" @click="openDeleteDialog(item)">mdi-delete</v-icon>
@@ -23,20 +21,15 @@
     </v-card>
 
     <!-- 2. Main Edit/Add Dialog -->
-    <BaseDialog
-      :is-visible="editDialog"
-      :title="dialogTitle"
-      width="900px"
-      @update:isVisible="editDialog = $event"
-      @confirmed="saveEspolio"
-      confirm-button-text="Salvar"
-    >
+    <BaseDialog :is-visible="editDialog" :title="dialogTitle" width="900px" @update:isVisible="editDialog = $event"
+      @confirmed="saveEspolio" confirm-button-text="Salvar">
       <v-form ref="form" v-model="isFormValid">
         <v-expansion-panels v-model="panel">
           <!-- Form sections go here -->
           <v-expansion-panel title="Caraterização da organização">
             <v-expansion-panel-text>
-              <v-text-field v-model="editedEspolio.organizacao.designacao" label="Designação" :rules="[rules.required]"></v-text-field>
+              <v-text-field v-model="editedEspolio.organizacao.designacao" label="Designação"
+                :rules="[rules.required]"></v-text-field>
               <v-text-field v-model="editedEspolio.organizacao.sigla" label="Sigla"></v-text-field>
               <v-text-field v-model="editedEspolio.organizacao.morada" label="Morada"></v-text-field>
               <v-text-field v-model="editedEspolio.organizacao.contactos" label="Contactos"></v-text-field>
@@ -45,72 +38,107 @@
 
           <v-expansion-panel title="Catalogação - Identificação">
             <v-expansion-panel-text>
-              <v-text-field v-model="editedEspolio.catalogacao.identificacao.designacaoAcervo" label="Designação do acervo/coleção"></v-text-field>
-              <v-text-field v-model="editedEspolio.catalogacao.identificacao.entidadeProdutora" label="Entidade produtora"></v-text-field>
-              <v-text-field v-model="editedEspolio.catalogacao.identificacao.numeroInventario" label="Nº de inventário" :rules="[rules.required]"></v-text-field>
-              <v-combobox v-model="editedEspolio.catalogacao.identificacao.outraNumeracao" label="Outra numeração (Fichas antigas)" multiple chips></v-combobox>
-              <v-select v-model="editedEspolio.catalogacao.identificacao.nivel" :items="['peça', 'conjunto']" label="Nível"></v-select>
-              <v-combobox v-model="editedEspolio.catalogacao.identificacao.nucleo" :items="['Arqueologia Romana', 'Cerâmica']" label="Núcleo" multiple chips></v-combobox>
-              <v-combobox v-model="editedEspolio.catalogacao.identificacao.categoria" :items="['Património Arqueológico']" label="Categoria" multiple chips></v-combobox>
-              <v-select v-model="editedEspolio.catalogacao.identificacao.tipologia" :items="['Objetos', 'imaterial']" label="Tipologia"></v-select>
-              <v-combobox v-model="editedEspolio.catalogacao.identificacao.materiais" :items="['barro', 'argila']" label="Materiais" multiple chips></v-combobox>
-              <v-text-field v-model="editedEspolio.catalogacao.identificacao.titulo" label="Título ou nome" :rules="[rules.required]"></v-text-field>
-              <v-text-field v-model="editedEspolio.catalogacao.identificacao.dataPeca" label="Data (cronologia) da peça"></v-text-field>
+              <v-text-field v-model="editedEspolio.catalogacao.identificacao.designacaoAcervo"
+                label="Designação do acervo/coleção"></v-text-field>
+              <v-text-field v-model="editedEspolio.catalogacao.identificacao.entidadeProdutora"
+                label="Entidade produtora"></v-text-field>
+              <v-text-field v-model="editedEspolio.catalogacao.identificacao.numeroInventario" label="Nº de inventário"
+                :rules="[rules.required]"></v-text-field>
+              <v-combobox v-model="editedEspolio.catalogacao.identificacao.outraNumeracao"
+                label="Outra numeração (Fichas antigas)" multiple chips></v-combobox>
+              <v-select v-model="editedEspolio.catalogacao.identificacao.nivel" :items="['peça', 'conjunto']"
+                label="Nível"></v-select>
+              <v-combobox v-model="editedEspolio.catalogacao.identificacao.nucleo"
+                :items="['Arqueologia Romana', 'Cerâmica']" label="Núcleo" multiple chips></v-combobox>
+              <v-combobox v-model="editedEspolio.catalogacao.identificacao.categoria"
+                :items="['Património Arqueológico']" label="Categoria" multiple chips></v-combobox>
+              <v-select v-model="editedEspolio.catalogacao.identificacao.tipologia" :items="['Objetos', 'imaterial']"
+                label="Tipologia"></v-select>
+              <v-combobox v-model="editedEspolio.catalogacao.identificacao.materiais" :items="['barro', 'argila']"
+                label="Materiais" multiple chips></v-combobox>
+              <v-text-field v-model="editedEspolio.catalogacao.identificacao.titulo" label="Título ou nome"
+                :rules="[rules.required]"></v-text-field>
+              <v-text-field v-model="editedEspolio.catalogacao.identificacao.dataPeca"
+                label="Data (cronologia) da peça"></v-text-field>
             </v-expansion-panel-text>
           </v-expansion-panel>
 
           <v-expansion-panel title="Catalogação - Descrição física">
             <v-expansion-panel-text>
-                <v-text-field v-model.number="editedEspolio.catalogacao.descricaoFisica.medidas.comprimento" label="Comprimento" type="number"></v-text-field>
-                <v-text-field v-model.number="editedEspolio.catalogacao.descricaoFisica.medidas.largura" label="Largura" type="number"></v-text-field>
-                <v-text-field v-model.number="editedEspolio.catalogacao.descricaoFisica.medidas.altura" label="Altura" type="number"></v-text-field>
-                <v-text-field v-model.number="editedEspolio.catalogacao.descricaoFisica.medidas.diametro.maior" label="Diâmetro maior" type="number"></v-text-field>
-                <v-text-field v-model.number="editedEspolio.catalogacao.descricaoFisica.medidas.diametro.menor" label="Diâmetro menor" type="number"></v-text-field>
-              <v-text-field v-model.number="editedEspolio.catalogacao.descricaoFisica.peso" label="Peso" type="number"></v-text-field>
-              <v-combobox v-model="editedEspolio.catalogacao.descricaoFisica.tecnicas" label="Técnicas" multiple chips></v-combobox>
-              <v-textarea v-model="editedEspolio.catalogacao.descricaoFisica.descricaoTextual" label="Descrição textual"></v-textarea>
-              <v-textarea v-model="editedEspolio.catalogacao.descricaoFisica.marcasOuInscricoes" label="Marcas ou inscrições"></v-textarea>
+              <v-text-field v-model.number="editedEspolio.catalogacao.descricaoFisica.medidas.comprimento"
+                label="Comprimento" type="number"></v-text-field>
+              <v-text-field v-model.number="editedEspolio.catalogacao.descricaoFisica.medidas.largura" label="Largura"
+                type="number"></v-text-field>
+              <v-text-field v-model.number="editedEspolio.catalogacao.descricaoFisica.medidas.altura" label="Altura"
+                type="number"></v-text-field>
+              <v-text-field v-model.number="editedEspolio.catalogacao.descricaoFisica.medidas.diametro.maior"
+                label="Diâmetro maior" type="number"></v-text-field>
+              <v-text-field v-model.number="editedEspolio.catalogacao.descricaoFisica.medidas.diametro.menor"
+                label="Diâmetro menor" type="number"></v-text-field>
+              <v-text-field v-model.number="editedEspolio.catalogacao.descricaoFisica.peso" label="Peso"
+                type="number"></v-text-field>
+              <v-combobox v-model="editedEspolio.catalogacao.descricaoFisica.tecnicas" label="Técnicas" multiple
+                chips></v-combobox>
+              <v-textarea v-model="editedEspolio.catalogacao.descricaoFisica.descricaoTextual"
+                label="Descrição textual"></v-textarea>
+              <v-textarea v-model="editedEspolio.catalogacao.descricaoFisica.marcasOuInscricoes"
+                label="Marcas ou inscrições"></v-textarea>
             </v-expansion-panel-text>
           </v-expansion-panel>
 
           <v-expansion-panel title="Contexto">
             <v-expansion-panel-text>
-              <v-combobox v-model="editedEspolio.catalogacao.contexto.lugares" label="Lugares" multiple chips></v-combobox>
+              <v-combobox v-model="editedEspolio.catalogacao.contexto.lugares" label="Lugares" multiple
+                chips></v-combobox>
               <v-text-field v-model="editedEspolio.catalogacao.contexto.uso" label="Uso"></v-text-field>
               <h4>Coletor</h4>
-              <v-text-field v-model="editedEspolio.catalogacao.contexto.proveniencia.coletor.nome" label="Nome do Coletor"></v-text-field>
-              <v-text-field v-model="editedEspolio.catalogacao.contexto.proveniencia.coletor.profissao" label="Profissão do Coletor"></v-text-field>
-              <v-text-field v-model="editedEspolio.catalogacao.contexto.proveniencia.coletor.morada" label="Morada do Coletor"></v-text-field>
+              <v-text-field v-model="editedEspolio.catalogacao.contexto.proveniencia.coletor.nome"
+                label="Nome do Coletor"></v-text-field>
+              <v-text-field v-model="editedEspolio.catalogacao.contexto.proveniencia.coletor.profissao"
+                label="Profissão do Coletor"></v-text-field>
+              <v-text-field v-model="editedEspolio.catalogacao.contexto.proveniencia.coletor.morada"
+                label="Morada do Coletor"></v-text-field>
               <h4>Informador</h4>
-              <v-text-field v-model="editedEspolio.catalogacao.contexto.proveniencia.informador.nome" label="Nome do Informador"></v-text-field>
-              <v-text-field v-model.number="editedEspolio.catalogacao.contexto.proveniencia.informador.idade" label="Idade do Informador" type="number"></v-text-field>
-              <v-text-field v-model="editedEspolio.catalogacao.contexto.proveniencia.informador.profissao" label="Profissão do Informador"></v-text-field>
+              <v-text-field v-model="editedEspolio.catalogacao.contexto.proveniencia.informador.nome"
+                label="Nome do Informador"></v-text-field>
+              <v-text-field v-model.number="editedEspolio.catalogacao.contexto.proveniencia.informador.idade"
+                label="Idade do Informador" type="number"></v-text-field>
+              <v-text-field v-model="editedEspolio.catalogacao.contexto.proveniencia.informador.profissao"
+                label="Profissão do Informador"></v-text-field>
             </v-expansion-panel-text>
           </v-expansion-panel>
 
           <v-expansion-panel title="Acesso">
             <v-expansion-panel-text>
-              <v-text-field v-model="editedEspolio.catalogacao.acesso.estadoConservacao" label="Estado de conservação"></v-text-field>
-              <v-combobox v-model="editedEspolio.catalogacao.acesso.intervencoes" label="Intervenções (conservação e restauro)" multiple chips></v-combobox>
+              <v-text-field v-model="editedEspolio.catalogacao.acesso.estadoConservacao"
+                label="Estado de conservação"></v-text-field>
+              <v-combobox v-model="editedEspolio.catalogacao.acesso.intervencoes"
+                label="Intervenções (conservação e restauro)" multiple chips></v-combobox>
               <v-text-field v-model="editedEspolio.catalogacao.acesso.localizacao" label="Localização"></v-text-field>
-              <v-combobox v-model="editedEspolio.catalogacao.acesso.objetosAssociados" label="Objetos associados" multiple chips></v-combobox>
+              <v-combobox v-model="editedEspolio.catalogacao.acesso.objetosAssociados" label="Objetos associados"
+                multiple chips></v-combobox>
             </v-expansion-panel-text>
           </v-expansion-panel>
 
           <v-expansion-panel title="Controlo da descrição">
             <v-expansion-panel-text>
-              <v-combobox v-model="editedEspolio.catalogacao.controloDescricao.bibliografia" label="Bibliografia" multiple chips></v-combobox>
-              <v-text-field v-model="editedEspolio.catalogacao.controloDescricao.dataRegisto" label="Data do registo" type="date"></v-text-field>
-              <v-text-field v-model="editedEspolio.catalogacao.controloDescricao.responsavel" label="Responsável"></v-text-field>
-              <v-textarea v-model="editedEspolio.catalogacao.controloDescricao.notaCatalogador" label="Nota do catalogador"></v-textarea>
+              <v-combobox v-model="editedEspolio.catalogacao.controloDescricao.bibliografia" label="Bibliografia"
+                multiple chips></v-combobox>
+              <v-text-field v-model="editedEspolio.catalogacao.controloDescricao.dataRegisto" label="Data do registo"
+                type="date"></v-text-field>
+              <v-text-field v-model="editedEspolio.catalogacao.controloDescricao.responsavel"
+                label="Responsável"></v-text-field>
+              <v-textarea v-model="editedEspolio.catalogacao.controloDescricao.notaCatalogador"
+                label="Nota do catalogador"></v-textarea>
             </v-expansion-panel-text>
           </v-expansion-panel>
 
           <v-expansion-panel title="Anexo">
             <v-expansion-panel-text>
-                <v-img v-if="imagePreviewUrl" :src="imagePreviewUrl" max-height="300" class="mb-4"></v-img>
-                <v-file-input label="Imagem" v-model="imagemFile" chips accept="image/*"></v-file-input>
-                <v-text-field v-model="editedEspolio.catalogacao.anexo.imagem" label="URL da Imagem" hint="URL da imagem existente ou para onde será enviada."></v-text-field>
+              <v-img v-if="imagePreviewUrl" :src="imagePreviewUrl" max-height="300" class="mb-4"></v-img>
+              <v-file-input label="Imagem" v-model="imagemFile" chips accept="image/*"></v-file-input>
+              <v-text-field v-model="editedEspolio.catalogacao.anexo.imagem" label="URL da Imagem"
+                hint="URL da imagem existente ou para onde será enviada."></v-text-field>
             </v-expansion-panel-text>
           </v-expansion-panel>
         </v-expansion-panels>
@@ -129,6 +157,19 @@
         </v-card-actions>
       </v-card>
     </v-dialog>
+
+    <!-- Snackbar -->
+    <v-snackbar v-model="snackbar" :color="snackbarColor" :timeout="3000">
+      {{ snackbarText }}
+      <template v-slot:actions>
+        <v-btn color="white" variant="text" @click="snackbar = false">Fechar</v-btn>
+      </template>
+    </v-snackbar>
+
+    <!-- Loader -->
+    <v-overlay v-model="loading" class="align-center justify-center">
+      <v-progress-circular indeterminate color="primary"></v-progress-circular>
+    </v-overlay>
   </div>
 </template>
 
@@ -152,6 +193,25 @@ const form = ref<VForm | null>(null);
 const isFormValid = ref(false);
 const espolioToDelete = ref<Espolio | null>(null);
 const keycloakStore = useKeycloakStore();
+const search = ref('');
+const loading = ref(false);
+const snackbar = ref(false);
+const snackbarText = ref('');
+const snackbarColor = ref('');
+
+const filteredEspolios = computed(() => {
+  if (!search.value) {
+    return espolios.value;
+  }
+  return espolios.value.filter(espolio => {
+    const searchTerm = search.value.toLowerCase();
+    return (
+      espolio.organizacao.designacao.toLowerCase().includes(searchTerm) ||
+      espolio.catalogacao.identificacao.numeroInventario.toLowerCase().includes(searchTerm) ||
+      espolio.catalogacao.identificacao.titulo.toLowerCase().includes(searchTerm)
+    );
+  });
+});
 
 // Validation Rules
 const rules = {
@@ -259,6 +319,7 @@ function deepMerge<T extends object>(target: T, source: object): T {
 }
 
 async function fetchEspolios() {
+  loading.value = true;
   try {
     console.log('Fetching espolios from collection:', `${config.public.apiBaseUrl}/espolios`);
     const data = await $fetch<Espolio[]>(`${config.public.apiBaseUrl}/espolios`, {
@@ -270,6 +331,11 @@ async function fetchEspolios() {
     espolios.value = data;
   } catch (err) {
     console.error("Erro a buscar espólios:", err);
+    snackbarText.value = 'Erro ao buscar espólios';
+    snackbarColor.value = 'error';
+    snackbar.value = true;
+  } finally {
+    loading.value = false;
   }
 }
 
@@ -378,12 +444,12 @@ async function saveEspolio() {
   const { valid } = await form.value.validate();
   if (!valid) return;
 
+  loading.value = true;
   const espolioToSave = sanitizeEspolioForSaving(editedEspolio.value);
 
   const formData = new FormData();
   formData.append('espolio', JSON.stringify(espolioToSave));
 
-  // The v-file-input can return an array or a single file.
   const file = Array.isArray(imagemFile.value) ? imagemFile.value[0] : imagemFile.value;
   if (file) {
     formData.append('imagem', file);
@@ -392,9 +458,9 @@ async function saveEspolio() {
   const fetchHeaders = new Headers();
   fetchHeaders.append('Authorization', `Bearer ${keycloakStore.token}`);
 
-  if (editedIndex.value > -1) {
-    // Update
-    try {
+  try {
+    if (editedIndex.value > -1) {
+      // Update
       if (!espolioToSave._id) {
         console.error('Espólio sem _id não pode ser atualizado');
         return;
@@ -406,13 +472,11 @@ async function saveEspolio() {
       });
       if (updatedEspolio) {
         espolios.value[editedIndex.value] = updatedEspolio;
+        snackbarText.value = 'Espólio atualizado com sucesso!';
+        snackbarColor.value = 'success';
       }
-    } catch (error) {
-      console.error("Erro ao atualizar espólio:", error);
-    }
-  } else {
-    // Create
-    try {
+    } else {
+      // Create
       const newEspolio = await $fetch<Espolio>(`${config.public.apiBaseUrl}/espolios`, {
         method: 'POST',
         body: formData,
@@ -420,13 +484,20 @@ async function saveEspolio() {
       });
       if (newEspolio) {
         espolios.value.push(newEspolio);
+        snackbarText.value = 'Espólio criado com sucesso!';
+        snackbarColor.value = 'success';
       }
-    } catch (error) {
-      console.error("Erro ao criar espólio:", error);
     }
+  } catch (error) {
+    console.error("Erro ao salvar espólio:", error);
+    snackbarText.value = 'Erro ao salvar espólio';
+    snackbarColor.value = 'error';
+  } finally {
+    loading.value = false;
+    snackbar.value = true;
+    editDialog.value = false;
+    imagemFile.value = null;
   }
-  editDialog.value = false;
-  imagemFile.value = null; // Reset file input
 }
 
 function openDeleteDialog(item: Espolio) {
@@ -441,7 +512,7 @@ function closeDeleteDialog() {
 
 async function deleteEspolioConfirm() {
   if (!espolioToDelete.value || !espolioToDelete.value._id) return;
-
+  loading.value = true;
   try {
     await $fetch<void>(`${config.public.apiBaseUrl}/espolios/${encodeURIComponent(espolioToDelete.value._id)}`, {
       method: 'DELETE',
@@ -450,10 +521,17 @@ async function deleteEspolioConfirm() {
       }
     });
     espolios.value = espolios.value.filter(e => e._id !== espolioToDelete.value?._id);
+    snackbarText.value = 'Espólio apagado com sucesso!';
+    snackbarColor.value = 'success';
   } catch (error) {
     console.error("Erro ao apagar espólio:", error);
+    snackbarText.value = 'Erro ao apagar espólio';
+    snackbarColor.value = 'error';
+  } finally {
+    loading.value = false;
+    snackbar.value = true;
+    closeDeleteDialog();
   }
-  closeDeleteDialog();
 }
 </script>
 
@@ -461,6 +539,7 @@ async function deleteEspolioConfirm() {
 .v-expansion-panel-text__wrapper {
   padding: 16px;
 }
+
 h4 {
   margin-top: 1rem;
   margin-bottom: 0.5rem;
