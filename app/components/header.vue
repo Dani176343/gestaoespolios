@@ -9,7 +9,7 @@
     </button>
     <div class="header__actions">
       <button class="header__action-btn" title="Language" aria-label="Select language">
-        <span class="header__flag-emoji" role="img" aria-label="US Flag">🇺🇸</span>
+        PT
       </button>
       <button class="header__action-btn" title="Notifications" aria-label="Notifications">
         <i class="icon-notification-line"></i>

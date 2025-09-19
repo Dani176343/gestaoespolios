@@ -399,7 +399,7 @@ async function saveEspolio() {
         console.error('Espólio sem _id não pode ser atualizado');
         return;
       }
-      const updatedEspolio = await $fetch<Espolio>(`${config.public.apiBaseUrl}/espolios/${encodeURIComponent(espolioToSave._id)}`, {
+      const updatedEspolio = await $fetch<Espolio>(`${config.public.apiBaseUrl}/espolios/${encodeURIComponent(espolioToSave._id!)}`, {
         method: 'PUT',
         body: formData,
         headers: fetchHeaders,
