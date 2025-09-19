@@ -13,6 +13,8 @@
         <br />
         <v-data-table :headers="headers" :items="filteredEspolios" item-value="_id" class="elevation-1">
           <template v-slot:item.actions="{ item }">
+            <v-icon size="small" class="mr-2" @click="openViewImageDialog(item)"
+              :disabled="!item.catalogacao.anexo.imagem">mdi-eye</v-icon>
             <v-icon size="small" class="mr-2" @click="openEditDialog(item)">mdi-pencil</v-icon>
             <v-icon size="small" @click="openDeleteDialog(item)">mdi-delete</v-icon>
           </template>
@@ -158,6 +160,20 @@
       </v-card>
     </v-dialog>
 
+    <!-- View Image Dialog -->
+    <v-dialog v-model="viewImageDialog" max-width="90vw">
+      <div class="view-dialog-wrapper">
+        <!-- Botão fechar (não propaga o clique) -->
+        <v-btn class="view-dialog-close" icon @click.stop="viewImageDialog = false" aria-label="Fechar">
+          <v-icon>mdi-close</v-icon>
+        </v-btn>
+
+        <!-- Imagem: clicar fecha o diálogo -->
+        <v-img :src="imageUrl" class="view-dialog-img" contain @click="viewImageDialog = false" role="button"
+          tabindex="0" @keydown.enter="viewImageDialog = false"></v-img>
+      </div>
+    </v-dialog>
+
     <!-- Snackbar -->
     <v-snackbar v-model="snackbar" :color="snackbarColor" :timeout="3000">
       {{ snackbarText }}
@@ -186,6 +202,8 @@ const config = useRuntimeConfig();
 const espolios = ref<Espolio[]>([]);
 const editDialog = ref(false);
 const deleteDialog = ref(false);
+const viewImageDialog = ref(false);
+const imageUrl = ref('');
 const dialogTitle = ref('');
 const editedIndex = ref(-1);
 const panel = ref<number | null>(0);
@@ -356,6 +374,13 @@ function openEditDialog(item: any) {
   imagePreviewDataUrl.value = null;
   dialogTitle.value = 'Editar Espólio';
   editDialog.value = true;
+}
+
+function openViewImageDialog(item: Espolio) {
+  if (item.catalogacao.anexo.imagem) {
+    imageUrl.value = item.catalogacao.anexo.imagem;
+    viewImageDialog.value = true;
+  }
 }
 
 // Helpers para navegar e setar por path (suporta índices numéricos)
@@ -543,5 +568,25 @@ async function deleteEspolioConfirm() {
 h4 {
   margin-top: 1rem;
   margin-bottom: 0.5rem;
+}
+
+.view-dialog-wrapper {
+  position: relative;
+  display: inline-block;
+  max-width: 90vw;
+}
+
+.view-dialog-close {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  z-index: 20;
+  background: rgba(255, 255, 255, 0.78);
+}
+
+.view-dialog-img {
+  display: block;
+  max-width: 100%;
+  max-height: 90vh;
 }
 </style>
