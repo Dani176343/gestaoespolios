@@ -27,7 +27,7 @@ const navItems = [
   { title: 'Painel central', icon: 'icon-home-line', to: '/' },
   { title: 'Espolios', icon: 'icon-archive-line', to: '/espolios' },
   { title: 'Perfil', icon: 'icon-user-line', to: '/profile' },
-  { title: 'Centro de ajuda', icon: 'icon-question-line', to: '#' },
+  //{ title: 'Centro de ajuda', icon: 'icon-question-line', to: '#' },
 ];
 </script>
 

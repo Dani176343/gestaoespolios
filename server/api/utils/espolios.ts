@@ -3,36 +3,6 @@ import type { H3Event } from 'h3';
 
 const API_URL = 'http://localhost:3000/espolios';
 
-/**
- * Recursively appends properties of a JavaScript object to a FormData object.
- * Nested objects are flattened with dot notation (e.g., { a: { b: 'c' } } becomes 'a.b': 'c').
- * Arrays are appended with multiple entries under the same key.
- * @param formData The FormData object to append to.
- * @param data The JavaScript object or value to append.
- * @param parentKey The base key for nested properties.
- */
-function appendToFormData(formData: FormData, data: any, parentKey?: string) {
-    if (data === null || data === undefined) {
-        return;
-    }
-
-    if (Array.isArray(data)) {
-        // Append each item in the array with the same key. FormData handles this by creating a list of values.
-        data.forEach(item => {
-            appendToFormData(formData, item, parentKey);
-        });
-    } else if (typeof data === 'object' && !(data instanceof File) && !(data instanceof Date)) {
-        // For objects, recurse through keys.
-        Object.keys(data).forEach(key => {
-            const newKey = parentKey ? `${parentKey}.${key}` : key;
-            appendToFormData(formData, data[key], newKey);
-        });
-    } else if (parentKey) {
-        // For primitive values, append them directly.
-        formData.append(parentKey, data.toString());
-    }
-}
-
 export const getEspolios = async (organization: string): Promise<Espolio[]> => {
   try {
     const espolios = await $fetch<Espolio[]>(`${API_URL}/${organization}`);
@@ -54,23 +24,20 @@ export const addEspolio = async (organization: string, event: H3Event): Promise<
     }
 
     const espolioPart = multipart.find(p => p.name === 'espolio');
-    const imagePart = multipart.find(p => p.name === 'imagem');
-
     if (!espolioPart || !espolioPart.data) {
       throw new Error("Missing 'espolio' part in multipart data");
     }
 
-    const espolioData = JSON.parse(espolioPart.data.toString());
     const formData = new FormData();
+    formData.append('espolio', espolioPart.data.toString());
 
-    // Flatten the JSON data and append its fields to FormData
-    appendToFormData(formData, espolioData);
-
-    // Append the image file if it exists
-    if (imagePart && imagePart.data) {
+    const imageParts = multipart.filter(p => p.name?.startsWith('imagem_'));
+    imageParts.forEach(imagePart => {
+      if (imagePart.data) {
         const blob = new Blob([imagePart.data as BlobPart], { type: imagePart.type });
-        formData.append('imagem', blob, imagePart.filename);
-    }
+        formData.append(imagePart.name!, blob, imagePart.filename);
+      }
+    });
 
     const newEspolio = await $fetch<Espolio>(`${API_URL}/${organization}`, {
       method: 'POST',
@@ -95,23 +62,20 @@ export const updateEspolio = async (organization: string, id: string, event: H3E
     }
 
     const espolioPart = multipart.find(p => p.name === 'espolio');
-    const imagePart = multipart.find(p => p.name === 'imagem');
-
     if (!espolioPart || !espolioPart.data) {
         throw new Error("Missing 'espolio' part in multipart data");
     }
 
-    const espolioData = JSON.parse(espolioPart.data.toString());
     const formData = new FormData();
+    formData.append('espolio', espolioPart.data.toString());
 
-    // Flatten the JSON data and append its fields to FormData
-    appendToFormData(formData, espolioData);
-
-    // Append the image file if it exists
-    if (imagePart && imagePart.data) {
+    const imageParts = multipart.filter(p => p.name?.startsWith('imagem_'));
+    imageParts.forEach(imagePart => {
+      if (imagePart.data) {
         const blob = new Blob([imagePart.data as BlobPart], { type: imagePart.type });
-        formData.append('imagem', blob, imagePart.filename);
-    }
+        formData.append(imagePart.name!, blob, imagePart.filename);
+      }
+    });
 
     const espolio = await $fetch<Espolio>(`${API_URL}/${organization}/${id}`, {
       method: 'PUT',

@@ -14,7 +14,7 @@
         <v-data-table :headers="headers" :items="filteredEspolios" item-value="_id" class="elevation-1">
           <template v-slot:item.actions="{ item }">
             <v-icon size="small" class="mr-2" @click="openViewImageDialog(item)"
-              :disabled="!item.catalogacao.anexo.imagem">mdi-eye</v-icon>
+              :disabled="!item.catalogacao.anexos || item.catalogacao.anexos.length === 0">mdi-eye</v-icon>
             <v-icon size="small" class="mr-2" @click="openEditDialog(item)">mdi-pencil</v-icon>
             <v-icon size="small" @click="openDeleteDialog(item)">mdi-delete</v-icon>
           </template>
@@ -135,12 +135,26 @@
             </v-expansion-panel-text>
           </v-expansion-panel>
 
-          <v-expansion-panel title="Anexo">
+          <v-expansion-panel title="Anexos">
             <v-expansion-panel-text>
-              <v-img v-if="imagePreviewUrl" :src="imagePreviewUrl" max-height="300" class="mb-4"></v-img>
-              <v-file-input label="Imagem" v-model="imagemFile" chips accept="image/*"></v-file-input>
-              <v-text-field v-model="editedEspolio.catalogacao.anexo.imagem" label="URL da Imagem"
-                hint="URL da imagem existente ou para onde será enviada."></v-text-field>
+              <v-expansion-panels>
+                <v-expansion-panel v-for="(anexo, index) in editedEspolio.catalogacao.anexos" :key="index"
+                  :title="`Imagem ${index + 1}`">
+                  <v-expansion-panel-text>
+                    <v-img :src="getImagePreviewUrl(index) || ''" max-height="300" class="mb-4"></v-img>
+                    <v-file-input
+                      label="Imagem"
+                      :model-value="imagemFiles[index]"
+                      @update:model-value="handleFileChange(index, $event)"
+                      accept="image/*"
+                    ></v-file-input>
+                    <v-text-field v-model="anexo.imagem" label="URL da Imagem"
+                      hint="URL da imagem existente ou para onde será enviada."></v-text-field>
+                    <v-btn color="error" @click="removeAnexo(index)">Remover Imagem</v-btn>
+                  </v-expansion-panel-text>
+                </v-expansion-panel>
+              </v-expansion-panels>
+              <v-btn color="primary" @click="addAnexo" class="mt-4">Adicionar Imagem</v-btn>
             </v-expansion-panel-text>
           </v-expansion-panel>
         </v-expansion-panels>
@@ -163,14 +177,15 @@
     <!-- View Image Dialog -->
     <v-dialog v-model="viewImageDialog" max-width="90vw">
       <div class="view-dialog-wrapper">
-        <!-- Botão fechar (não propaga o clique) -->
         <v-btn class="view-dialog-close" icon @click.stop="viewImageDialog = false" aria-label="Fechar">
           <v-icon>mdi-close</v-icon>
         </v-btn>
-
-        <!-- Imagem: clicar fecha o diálogo -->
-        <v-img :src="imageUrl" class="view-dialog-img" contain @click="viewImageDialog = false" role="button"
-          tabindex="0" @keydown.enter="viewImageDialog = false"></v-img>
+        <v-carousel v-if="carouselItems.length" show-arrows="hover" hide-delimiters style="width: 100%; height: 100%;">
+          <v-carousel-item v-for="(image, i) in carouselItems" :key="i">
+            <v-img :src="image" class="view-dialog-img" contain @click="viewImageDialog = false" role="button"
+              tabindex="0" @keydown.enter="viewImageDialog = false"></v-img>
+          </v-carousel-item>
+        </v-carousel>
       </div>
     </v-dialog>
 
@@ -190,7 +205,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch, computed } from 'vue';
+import { ref, computed, reactive } from 'vue';
 import { useRuntimeConfig } from '#app';
 import type { VForm } from 'vuetify/lib/components/index.mjs';
 import BaseDialog from '~/components/core/BaseDialog.vue';
@@ -206,7 +221,7 @@ const viewImageDialog = ref(false);
 const imageUrl = ref('');
 const dialogTitle = ref('');
 const editedIndex = ref(-1);
-const panel = ref<number | null>(0);
+const panel = ref<(number | string)[] | null>([0]);
 const form = ref<VForm | null>(null);
 const isFormValid = ref(false);
 const espolioToDelete = ref<Espolio | null>(null);
@@ -216,6 +231,7 @@ const loading = ref(false);
 const snackbar = ref(false);
 const snackbarText = ref('');
 const snackbarColor = ref('');
+const carouselItems = ref<string[]>([]);
 
 const filteredEspolios = computed(() => {
   if (!search.value) {
@@ -266,13 +282,13 @@ const defaultEspolio: Espolio = {
     },
     acesso: { estadoConservacao: '', intervencoes: [], localizacao: '', objetosAssociados: [] },
     controloDescricao: { bibliografia: [], dataRegisto: new Date().toISOString().substr(0, 10), responsavel: '', notaCatalogador: '' },
-    anexo: { imagem: '' },
+    anexos: [],
   },
 };
 
 const editedEspolio = ref<Espolio>(JSON.parse(JSON.stringify(defaultEspolio)));
-const imagemFile = ref<File | File[] | null>(null);
-const imagePreviewDataUrl = ref<string | null>(null);
+const imagemFiles = ref<(File | null)[]>([]);
+const imagePreviewDataUrls = ref<(string | null)[]>([]);
 
 const headers = ref([
   { title: 'Designação', key: 'organizacao.designacao' },
@@ -287,28 +303,47 @@ watch(() => keycloakStore.token, (newToken) => {
   }
 }, { immediate: true });
 
-watch(imagemFile, (newFile) => {
-  const file = Array.isArray(newFile) ? newFile[0] : newFile;
-  if (file && file instanceof File) {
+function handleFileChange(index: number, fileOrFiles: File | File[] | null) {
+  // Accepts File, File[] or null. If array, use first file.
+  let file: File | null = null;
+  if (Array.isArray(fileOrFiles)) {
+    file = fileOrFiles.length > 0 ? (fileOrFiles[0] ?? null) : null;
+  } else {
+    file = fileOrFiles;
+  }
+  imagemFiles.value[index] = file;
+  if (file) {
     const reader = new FileReader();
     reader.onload = (e) => {
-      imagePreviewDataUrl.value = e.target?.result as string;
+      imagePreviewDataUrls.value[index] = e.target?.result as string;
     };
     reader.readAsDataURL(file);
   } else {
-    imagePreviewDataUrl.value = null;
+    imagePreviewDataUrls.value[index] = null;
   }
-});
+}
 
-const imagePreviewUrl = computed(() => {
-  if (imagePreviewDataUrl.value) {
-    return imagePreviewDataUrl.value;
+const getImagePreviewUrl = (index: number) => {
+  if (imagePreviewDataUrls.value[index]) {
+    return imagePreviewDataUrls.value[index];
   }
-  if (editedEspolio.value.catalogacao.anexo.imagem) {
-    return editedEspolio.value.catalogacao.anexo.imagem;
+  if (editedEspolio.value.catalogacao.anexos && editedEspolio.value.catalogacao.anexos[index]?.imagem) {
+    return editedEspolio.value.catalogacao.anexos[index].imagem;
   }
   return null;
-});
+};
+
+function addAnexo() {
+  editedEspolio.value.catalogacao.anexos.push({ imagem: '' });
+  imagemFiles.value.push(null);
+  imagePreviewDataUrls.value.push(null);
+}
+
+function removeAnexo(index: number) {
+  editedEspolio.value.catalogacao.anexos.splice(index, 1);
+  imagemFiles.value.splice(index, 1);
+  imagePreviewDataUrls.value.splice(index, 1);
+}
 
 // Utility Functions
 function isObject(item: any): item is Record<string, any> {
@@ -360,8 +395,8 @@ async function fetchEspolios() {
 function openAddDialog() {
   editedIndex.value = -1;
   editedEspolio.value = JSON.parse(JSON.stringify(defaultEspolio));
-  imagemFile.value = null;
-  imagePreviewDataUrl.value = null;
+  imagemFiles.value = [];
+  imagePreviewDataUrls.value = [];
   dialogTitle.value = 'Adicionar Novo Espólio';
   editDialog.value = true;
 }
@@ -370,15 +405,18 @@ function openEditDialog(item: any) {
   editedIndex.value = espolios.value.findIndex(e => e._id === item._id);
   const defaultClone = JSON.parse(JSON.stringify(defaultEspolio));
   editedEspolio.value = deepMerge(defaultClone, item);
-  imagemFile.value = null;
-  imagePreviewDataUrl.value = null;
+  if (!editedEspolio.value.catalogacao.anexos) {
+    editedEspolio.value.catalogacao.anexos = [];
+  }
+  imagemFiles.value = Array(editedEspolio.value.catalogacao.anexos.length).fill(null);
+  imagePreviewDataUrls.value = Array(editedEspolio.value.catalogacao.anexos.length).fill(null);
   dialogTitle.value = 'Editar Espólio';
   editDialog.value = true;
 }
 
 function openViewImageDialog(item: Espolio) {
-  if (item.catalogacao.anexo.imagem) {
-    imageUrl.value = item.catalogacao.anexo.imagem;
+  if (item.catalogacao?.anexos?.length > 0) {
+    carouselItems.value = item.catalogacao.anexos.map(anexo => anexo.imagem).filter((img): img is string => !!img);
     viewImageDialog.value = true;
   }
 }
@@ -475,10 +513,11 @@ async function saveEspolio() {
   const formData = new FormData();
   formData.append('espolio', JSON.stringify(espolioToSave));
 
-  const file = Array.isArray(imagemFile.value) ? imagemFile.value[0] : imagemFile.value;
-  if (file) {
-    formData.append('imagem', file);
-  }
+  imagemFiles.value.forEach((file, index) => {
+    if (file) {
+      formData.append(`imagem_${index}`, file);
+    }
+  });
 
   const fetchHeaders = new Headers();
   fetchHeaders.append('Authorization', `Bearer ${keycloakStore.token}`);
@@ -521,7 +560,7 @@ async function saveEspolio() {
     loading.value = false;
     snackbar.value = true;
     editDialog.value = false;
-    imagemFile.value = null;
+    imagemFiles.value = [];
   }
 }
 

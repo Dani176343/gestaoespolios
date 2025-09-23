@@ -63,8 +63,8 @@ export interface Espolio {
       responsavel: string;
       notaCatalogador: string;
     };
-    anexo: {
+    anexos: {
       imagem: string;
-    };
+    }[];
   };
 }
