@@ -207,8 +207,8 @@
 <script setup lang="ts">
 import { ref, computed, reactive } from 'vue';
 import { useRuntimeConfig } from '#app';
-import type { VForm } from 'vuetify/lib/components/index.mjs';
-import BaseDialog from '~/components/core/BaseDialog.vue';
+import type { VForm } from 'vuetify/components';
+import BaseDialog from '@/components/core/BaseDialog.vue';
 import { useKeycloakStore } from '~/stores/keycloak';
 import type { Espolio } from '~~/types/espolio';
 
