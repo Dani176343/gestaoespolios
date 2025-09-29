@@ -8,15 +8,6 @@
       </svg>
     </button>
     <div class="header__actions">
-      <button class="header__action-btn" title="Language" aria-label="Select language">
-        PT
-      </button>
-      <button class="header__action-btn" title="Notifications" aria-label="Notifications">
-        <i class="icon-notification-line"></i>
-      </button>
-      <button class="header__action-btn" title="Settings" aria-label="Settings">
-        <i class="icon-settings-5-line"></i>
-      </button>
       <div class="header__profile" @click="toggleDropdown" tabindex="0" @blur="closeDropdown" @keydown.esc="closeDropdown" role="button" aria-haspopup="true">
         <img :src="userAvatar" alt="User Avatar" class="header__avatar" />
         <div v-if="isDropdownOpen" class="header__dropdown" @mousedown.prevent>
@@ -31,22 +22,10 @@
           </div>
           <ul class="header__dropdown-menu">
             <li v-if="keycloakStore.authenticated">
-              <button class="header__dropdown-item">
+              <NuxtLink to="/profile" class="header__dropdown-item">
                 <i class="icon-user-line"></i>
                 Profile
-              </button>
-            </li>
-            <li v-if="keycloakStore.authenticated">
-              <button class="header__dropdown-item">
-                <i class="icon-settings-5-line"></i>
-                Account Setting
-              </button>
-            </li>
-            <li v-if="keycloakStore.authenticated">
-              <button class="header__dropdown-item">
-                <i class="icon-book-line"></i>
-                Activity Log
-              </button>
+              </NuxtLink>
             </li>
             <li v-if="keycloakStore.authenticated" class="header__dropdown-divider"></li>
             <li>
@@ -274,6 +253,7 @@ function closeDropdown() {
   color: #333;
   border-radius: 6px;
   transition: background-color 0.2s ease;
+  text-decoration: none;
 }
 
 .header__dropdown-item i {
