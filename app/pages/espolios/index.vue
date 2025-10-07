@@ -51,11 +51,11 @@
               <v-select v-model="editedEspolio.catalogacao.identificacao.nivel" :items="['peça', 'conjunto']"
                 label="Nível"></v-select>
               <v-combobox v-model="editedEspolio.catalogacao.identificacao.nucleo"
-                :items="['Arqueologia Romana', 'Cerâmica']" label="Núcleo" multiple chips></v-combobox>
+                :items="['Linho']" label="Núcleo" multiple chips></v-combobox>
               <v-combobox v-model="editedEspolio.catalogacao.identificacao.categoria"
                 :items="['Património Arqueológico']" label="Categoria" multiple chips></v-combobox>
-              <v-select v-model="editedEspolio.catalogacao.identificacao.tipologia" :items="['Objetos', 'imaterial']"
-                label="Tipologia"></v-select>
+              <v-text-field v-model="editedEspolio.catalogacao.identificacao.tipologia" label="Tipologia"
+                clearable></v-text-field>
               <v-combobox v-model="editedEspolio.catalogacao.identificacao.materiais" :items="['barro', 'argila']"
                 label="Materiais" multiple chips></v-combobox>
               <v-text-field v-model="editedEspolio.catalogacao.identificacao.titulo" label="Título ou nome"
@@ -142,12 +142,8 @@
                   :title="`Imagem ${index + 1}`">
                   <v-expansion-panel-text>
                     <v-img :src="getImagePreviewUrl(index) || ''" max-height="300" class="mb-4"></v-img>
-                    <v-file-input
-                      label="Imagem"
-                      :model-value="imagemFiles[index]"
-                      @update:model-value="handleFileChange(index, $event)"
-                      accept="image/*"
-                    ></v-file-input>
+                    <v-file-input label="Imagem" :model-value="imagemFiles[index]"
+                      @update:model-value="handleFileChange(index, $event)" accept="image/*"></v-file-input>
                     <v-text-field v-model="anexo.imagem" label="URL da Imagem"
                       hint="URL da imagem existente ou para onde será enviada."></v-text-field>
                     <v-btn color="error" @click="removeAnexo(index)">Remover Imagem</v-btn>
@@ -205,7 +201,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, reactive } from 'vue';
+import { ref, computed, watch } from 'vue';
 import { useRuntimeConfig } from '#app';
 import type { VForm } from 'vuetify/components';
 import BaseDialog from '@/components/core/BaseDialog.vue';
@@ -264,7 +260,7 @@ const defaultEspolio: Espolio = {
       nivel: 'peça',
       nucleo: [],
       categoria: [],
-      tipologia: 'Objetos',
+      tipologia: '',
       materiais: [],
       titulo: '',
       dataPeca: ''
@@ -371,17 +367,184 @@ function deepMerge<T extends object>(target: T, source: object): T {
   return output;
 }
 
+
+// Campos que são combobox / multi
+const PREDEFINED_MULTI_FIELDS = [
+  'catalogacao.identificacao.outraNumeracao',
+  'catalogacao.identificacao.nucleo',
+  'catalogacao.identificacao.categoria',
+  'catalogacao.identificacao.materiais',
+  'catalogacao.descricaoFisica.tecnicas',
+  'catalogacao.contexto.lugares',
+  'catalogacao.acesso.intervencoes',
+  'catalogacao.acesso.objetosAssociados',
+  'catalogacao.controloDescricao.bibliografia',
+];
+
+// Campos que são single selects / campos de data simples
+const PREDEFINED_SINGLE_FIELDS = [
+  'catalogacao.identificacao.nivel',
+  'catalogacao.identificacao.tipologia',
+  'catalogacao.controloDescricao.dataRegisto',
+  'catalogacao.identificacao.dataPeca'
+];
+
+function isMultiField(path?: string) {
+  if (!path) return false;
+  return PREDEFINED_MULTI_FIELDS.some(p => p.toLowerCase() === path.toLowerCase());
+}
+function isSingleField(path?: string) {
+  if (!path) return false;
+  return PREDEFINED_SINGLE_FIELDS.some(p => p.toLowerCase() === path.toLowerCase());
+}
+function splitListString(str: string) {
+  return str
+    .split(/;|,/)
+    .map(s => s.trim())
+    .filter(Boolean);
+}
+
+function parseExcelValueToInternal(value: any, targetPath?: string) {
+  if (value == null) return null;
+
+  if (Array.isArray(value)) {
+    if (isMultiField(targetPath)) {
+      return value.map(v => (typeof v === 'string' ? v.trim() : v)).filter(Boolean);
+    }
+    return value;
+  }
+
+  if (typeof value === 'number') {
+    return value;
+  }
+
+  if (typeof value === 'string') {
+    const trimmed = value.trim();
+    if (trimmed === '') return null;
+
+    if (isMultiField(targetPath)) {
+      return splitListString(trimmed);
+    }
+
+    if (isSingleField(targetPath)) {
+      return trimmed;
+    }
+
+    if (targetPath && /medidas|peso|idade|diametro|comprimento|largura|altura/i.test(targetPath)) {
+      const n = Number(trimmed.replace(',', '.'));
+      return Number.isNaN(n) ? trimmed : n;
+    }
+
+    if (targetPath && /anexos|imagem/i.test(targetPath)) {
+      const parts = splitListString(trimmed);
+      return parts.map(p => ({ imagem: p }));
+    }
+
+    if (trimmed.includes(';')) {
+      return splitListString(trimmed);
+    }
+
+    const maybeNum = Number(trimmed.replace(',', '.'));
+    if (!Number.isNaN(maybeNum) && /^\s*-?\d+(\.\d+)?\s*$/.test(trimmed.replace(',', '.'))) {
+      return maybeNum;
+    }
+
+    return trimmed;
+  }
+
+  return value;
+}
+
+// Percorre um espolio (ou objecto similar) e normaliza campos predefinidos que sejam strings vindas do Excel
+function normalizeEspolioFields(obj: any) {
+  if (!obj || typeof obj !== 'object') return;
+  const numericPaths = [
+    'catalogacao.descricaoFisica.medidas.comprimento',
+    'catalogacao.descricaoFisica.medidas.largura',
+    'catalogacao.descricaoFisica.medidas.altura',
+    'catalogacao.descricaoFisica.medidas.diametro.maior',
+    'catalogacao.descricaoFisica.medidas.diametro.menor',
+    'catalogacao.descricaoFisica.peso',
+    'catalogacao.contexto.proveniencia.informador.idade'
+  ];
+
+  // normaliza multi fields
+  PREDEFINED_MULTI_FIELDS.forEach(path => {
+    const val = getAtPath(obj, path);
+    if (val != null && typeof val === 'string') {
+      const parsed = parseExcelValueToInternal(val, path);
+      setAtPath(obj, path, parsed);
+    }
+  });
+
+  // normaliza single fields
+  PREDEFINED_SINGLE_FIELDS.forEach(path => {
+    const val = getAtPath(obj, path);
+    if (val != null && typeof val === 'string') {
+      const parsed = parseExcelValueToInternal(val, path);
+      setAtPath(obj, path, parsed);
+    }
+  });
+
+  // numeric paths
+  numericPaths.forEach(path => {
+    const val = getAtPath(obj, path);
+    if (val === '') {
+      setAtPath(obj, path, null);
+    } else if (typeof val === 'string') {
+      const n = Number(val.replace(',', '.'));
+      setAtPath(obj, path, Number.isNaN(n) ? val : n);
+    }
+  });
+
+  // anexos: se for string com urls separados -> transformar
+  const anexosVal = getAtPath(obj, 'catalogacao.anexos');
+  if (typeof anexosVal === 'string') {
+    const parsed = parseExcelValueToInternal(anexosVal, 'catalogacao.anexos');
+    if (Array.isArray(parsed)) {
+      setAtPath(obj, 'catalogacao.anexos', parsed);
+    }
+  }
+
+  // também lida com caso em que imagens estão em campo específico (ex.: 'imagem' na raiz)
+  if (obj.imagem && typeof obj.imagem === 'string') {
+    const parsed = parseExcelValueToInternal(obj.imagem, 'catalogacao.anexos');
+    if (Array.isArray(parsed)) {
+      const existing = getAtPath(obj, 'catalogacao.anexos') || [];
+      setAtPath(obj, 'catalogacao.anexos', existing.concat(parsed));
+    } else if (typeof parsed === 'object' && parsed.imagem) {
+      const existing = getAtPath(obj, 'catalogacao.anexos') || [];
+      existing.push(parsed);
+      setAtPath(obj, 'catalogacao.anexos', existing);
+    }
+  }
+}
+
+/* ------------------------------
+  FIM: Normalização
+  ------------------------------ */
+
 async function fetchEspolios() {
   loading.value = true;
   try {
     console.log('Fetching espolios from collection:', `${config.public.apiBaseUrl}/espolios`);
-    const data = await $fetch<Espolio[]>(`${config.public.apiBaseUrl}/espolios`, {
+    const data = await $fetch<any[]>(`${config.public.apiBaseUrl}/espolios`, {
       headers: {
         'Authorization': `Bearer ${keycloakStore.token}`
       }
     });
     console.log('Successfully fetched espolios. Data:', data);
-    espolios.value = data;
+
+    // Normaliza cada item (aceita tanto já-estruturado quanto strings vindas do Excel)
+    const normalized = data.map(item => {
+      // clonamos para não mutar resposta original
+      const clone = JSON.parse(JSON.stringify(item));
+      // tenta normalizar campos internos (se houver)
+      normalizeEspolioFields(clone);
+      return clone as Espolio;
+    });
+
+    espolios.value = normalized;
   } catch (err) {
     console.error("Erro a buscar espólios:", err);
     snackbarText.value = 'Erro ao buscar espólios';
@@ -403,8 +566,13 @@ function openAddDialog() {
 
 function openEditDialog(item: any) {
   editedIndex.value = espolios.value.findIndex(e => e._id === item._id);
+
+  // Garantir que strings vindas do Excel (nos campos predefinidos) se tornam arrays/números
+  const itemClone = JSON.parse(JSON.stringify(item));
+  normalizeEspolioFields(itemClone);
+
   const defaultClone = JSON.parse(JSON.stringify(defaultEspolio));
-  editedEspolio.value = deepMerge(defaultClone, item);
+  editedEspolio.value = deepMerge(defaultClone, itemClone);
   if (!editedEspolio.value.catalogacao.anexos) {
     editedEspolio.value.catalogacao.anexos = [];
   }
