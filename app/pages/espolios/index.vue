@@ -5,12 +5,13 @@
       <v-card-title>
         Gestão de Espólios
         <v-spacer></v-spacer>
-        <v-btn color="primary" @click="openAddDialog">Adicionar Espólio</v-btn>
+        <div class="d-flex align-center">
+          <v-btn color="primary" @click="openAddDialog" class="mr-2">Adicionar Espólio</v-btn>
+          <v-text-field v-model="search" append-icon="mdi-magnify" label="Procurar" hide-details
+            variant="outlined" density="compact"></v-text-field>
+        </div>
       </v-card-title>
       <v-card-text>
-        <v-text-field v-model="search" append-icon="mdi-magnify" label="Search" single-line hide-details
-          variant="outlined"></v-text-field>
-        <br />
         <v-data-table :headers="headers" :items="filteredEspolios" item-value="_id" class="elevation-1">
           <template v-slot:item.actions="{ item }">
             <v-icon size="small" class="mr-2" @click="openViewImageDialog(item)"
