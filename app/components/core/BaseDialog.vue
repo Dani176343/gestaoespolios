@@ -28,8 +28,8 @@
       <v-divider class="pa-1"></v-divider>
       <v-card-actions class="mb-1 mr-2">
         <v-spacer></v-spacer>
-        <v-btn variant="outlined" color="buttonColor" @click="closeDialog">Fechar</v-btn>
-        <v-btn v-if="confirmButton" variant="flat" color="buttonColor" @click="confirmDialog">{{ confirmButtonText }}</v-btn>
+        <v-btn variant="outlined" color="primary" @click="closeDialog">Fechar</v-btn>
+        <v-btn v-if="confirmButton" variant="flat" color="primary" @click="confirmDialog">{{ confirmButtonText }}</v-btn>
 
       </v-card-actions>
     </v-card>
