@@ -127,10 +127,10 @@
             <v-expansion-panel-text>
               <v-combobox v-model="editedEspolio.catalogacao.controloDescricao.bibliografia" label="Bibliografia"
                 multiple chips></v-combobox>
-              <v-text-field v-model="editedEspolio.catalogacao.controloDescricao.dataRegisto" label="Data do registo"
-                type="date"></v-text-field>
+              <v-text-field v-model="editedEspolio.catalogacao.controloDescricao.dataRegisto as string" label="Data do registo"
+                type="date" readonly></v-text-field>
               <v-text-field v-model="editedEspolio.catalogacao.controloDescricao.responsavel"
-                label="Responsável"></v-text-field>
+                label="Responsável" readonly></v-text-field>
               <v-textarea v-model="editedEspolio.catalogacao.controloDescricao.notaCatalogador"
                 label="Nota do catalogador"></v-textarea>
             </v-expansion-panel-text>
@@ -299,6 +299,16 @@ watch(() => keycloakStore.token, (newToken) => {
     fetchEspolios();
   }
 }, { immediate: true });
+
+// Watch for userInfo to autofill 'Responsável' when adding a new espolio
+watch(() => [keycloakStore.userInfo?.name, keycloakStore.userInfo?.preferred_username, editDialog.value, editedIndex.value], ([name, preferredUsername, dialogOpen, index]) => {
+  if (dialogOpen && index === -1) {
+    const responsibleName = String(name || preferredUsername || '');
+    if (responsibleName) {
+      editedEspolio.value.catalogacao.controloDescricao.responsavel = responsibleName;
+    }
+  }
+});
 
 function handleFileChange(index: number, fileOrFiles: File | File[] | null) {
   // Accepts File, File[] or null. If array, use first file.
@@ -561,7 +571,9 @@ function openAddDialog() {
   editedEspolio.value = JSON.parse(JSON.stringify(defaultEspolio));
   imagemFiles.value = [];
   imagePreviewDataUrls.value = [];
-  dialogTitle.value = 'Adicionar Novo Espólio';
+  if (keycloakStore.userInfo?.fullName) {
+    editedEspolio.value.catalogacao.controloDescricao.responsavel = keycloakStore.userInfo.fullName;
+  }
   editDialog.value = true;
 }
 
